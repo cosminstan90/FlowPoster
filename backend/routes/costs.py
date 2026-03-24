@@ -7,6 +7,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Any
 
 from backend.deps import CurrentUser, DB
 from backend.models import Campaign, Project
@@ -50,7 +51,7 @@ async def project_cost(
     project_id: uuid.UUID,
     month: str | None = Query(None, description="YYYY-MM"),
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     project = await db.scalar(select(Project).where(Project.id == project_id))
     if not project:
@@ -92,7 +93,7 @@ async def campaign_cost(
     campaign_id: uuid.UUID,
     month: str | None = Query(None, description="YYYY-MM"),
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     campaign = await db.scalar(select(Campaign).where(Campaign.id == campaign_id))
     if not campaign:
@@ -121,7 +122,7 @@ async def campaign_cost(
 async def cost_estimate(
     body: CostEstimateRequest,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     campaign = await db.scalar(select(Campaign).where(Campaign.id == body.campaign_id))
     if not campaign:
@@ -146,7 +147,7 @@ async def cost_estimate(
 )
 async def cost_summary(
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     rows = await get_all_projects_cost_this_month(db)
     return APIResponse.ok(

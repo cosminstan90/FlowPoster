@@ -11,6 +11,7 @@ from decimal import Decimal, InvalidOperation
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Any
 
 from backend.deps import CurrentUser, DB
 from backend.models import Campaign, Keyword
@@ -170,7 +171,7 @@ async def import_csv(
     column_mapping: str | None = Form(None),
     source: str = Form("manual"),
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     """
     Import keywords from a CSV file.
@@ -231,7 +232,7 @@ async def import_csv(
 async def import_paste(
     body: ImportPasteRequest,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     rows = [{"keyword": line.strip()} for line in body.text.splitlines() if line.strip()]
     result = await _run_import(body.campaign_id, rows, db)
@@ -249,7 +250,7 @@ async def import_paste(
 async def create_keyword(
     body: KeywordCreate,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     campaign = await db.scalar(select(Campaign).where(Campaign.id == body.campaign_id))
     if not campaign:
@@ -295,7 +296,7 @@ async def list_keywords(
     limit: int = Query(50, ge=1, le=500),
     sort: str = Query("volume", description="volume | created"),
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     base = select(Keyword).where(Keyword.campaign_id == campaign_id)
     if status_filter:
@@ -331,7 +332,7 @@ async def list_keywords(
 async def delete_keyword(
     keyword_id: uuid.UUID,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     kw = await db.scalar(select(Keyword).where(Keyword.id == keyword_id))
     if not kw:
@@ -352,7 +353,7 @@ async def update_keyword_status(
     keyword_id: uuid.UUID,
     body: KeywordStatusUpdate,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     kw = await db.scalar(select(Keyword).where(Keyword.id == keyword_id))
     if not kw:

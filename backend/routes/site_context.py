@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Any
 
 from backend.deps import CurrentUser, DB
 from backend.models import Project, SiteContext
@@ -23,7 +24,7 @@ async def _require_project(project_id: uuid.UUID, db: AsyncSession) -> None:
 async def get_context(
     project_id: uuid.UUID,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     await _require_project(project_id, db)
     result = await db.execute(
@@ -40,7 +41,7 @@ async def upsert_context(
     project_id: uuid.UUID,
     body: SiteContextUpsert,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     await _require_project(project_id, db)
 

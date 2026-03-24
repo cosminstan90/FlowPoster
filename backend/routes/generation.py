@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Any
 
 from backend.deps import CurrentUser, DB
 from backend.models import Campaign, Keyword
@@ -31,7 +32,7 @@ router = APIRouter(prefix="/generate", tags=["generation"])
 async def generate_single(
     keyword_id: uuid.UUID,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     """Run the full AI generation pipeline for one keyword (synchronous)."""
     kw = await db.scalar(select(Keyword).where(Keyword.id == keyword_id))
@@ -63,7 +64,7 @@ async def generate_bulk(
     body: BulkGenerateRequest,
     confirm: bool = Query(False, description="Set to true to actually enqueue jobs"),
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     """
     Bulk generation with cost gate.

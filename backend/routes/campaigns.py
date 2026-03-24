@@ -3,6 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Any
 
 from backend.deps import CurrentUser, DB
 from backend.models import Campaign, Keyword, Project
@@ -56,7 +57,7 @@ def _row_to_detail(row) -> CampaignDetail:
 async def list_campaigns(
     project_id: uuid.UUID | None = None,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     stmt = select(Campaign).order_by(Campaign.created_at.desc())
     if project_id is not None:
@@ -71,7 +72,7 @@ async def list_campaigns(
 async def create_campaign(
     body: CampaignCreate,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     project_exists = await db.scalar(select(Project.id).where(Project.id == body.project_id))
     if not project_exists:
@@ -89,7 +90,7 @@ async def create_campaign(
 async def get_campaign(
     campaign_id: uuid.UUID,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     result = await db.execute(_counts_query(campaign_id))
     row = result.first()
@@ -103,7 +104,7 @@ async def update_campaign(
     campaign_id: uuid.UUID,
     body: CampaignUpdate,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     result = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
     campaign = result.scalar_one_or_none()
@@ -124,7 +125,7 @@ async def update_campaign(
 async def delete_campaign(
     campaign_id: uuid.UUID,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: Any = DB,
 ):
     result = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
     campaign = result.scalar_one_or_none()
