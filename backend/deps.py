@@ -24,5 +24,6 @@ async def get_current_user(
 
 
 # Shorthand dependency aliases
-CurrentUser = Annotated[str, Depends(get_current_user)]
-DB = Annotated[AsyncSession, Depends(get_db)]
+from typing import Any
+CurrentUser = Annotated[Any, Depends(get_current_user)]
+DB = Annotated[Any, Depends(get_db)]
