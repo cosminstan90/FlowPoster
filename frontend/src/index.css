@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-bg text-gray-200 font-sans antialiased overflow-x-hidden;
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(16, 185, 129, 0.05), transparent 35%),
+      radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.05), transparent 35%);
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-bg-card backdrop-blur-xl border border-border shadow-2xl rounded-2xl;
+  }
+  
+  .glass-button {
+    @apply relative overflow-hidden transition-all duration-300;
+  }
+  
+  .glass-button::after {
+    content: '';
+    @apply absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-300 rounded-lg pointer-events-none;
+  }
+  
+  .glass-button:hover::after {
+    @apply opacity-100;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-surface rounded-full border-[1.5px] border-bg transition-colors;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted/50;
+}
