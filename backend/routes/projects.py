@@ -66,7 +66,7 @@ def _row_to_project_with_stats(row) -> ProjectWithStats:
 @router.get("", response_model=APIResponse[list[ProjectWithStats]])
 async def list_projects(
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: DB,
 ):
     result = await db.execute(_build_stats_query())
     rows = result.all()
@@ -78,7 +78,7 @@ async def list_projects(
 async def create_project(
     body: ProjectCreate,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: DB,
 ):
     project = Project(**body.model_dump())
     db.add(project)
@@ -91,7 +91,7 @@ async def create_project(
 async def get_project(
     project_id: uuid.UUID,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: DB,
 ):
     # Stats row
     result = await db.execute(_build_stats_query().where(Project.id == project_id))
@@ -119,7 +119,7 @@ async def update_project(
     project_id: uuid.UUID,
     body: ProjectUpdate,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: DB,
 ):
     result = await db.execute(select(Project).where(Project.id == project_id))
     project = result.scalar_one_or_none()
@@ -138,7 +138,7 @@ async def update_project(
 async def delete_project(
     project_id: uuid.UUID,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: DB,
 ):
     result = await db.execute(select(Project).where(Project.id == project_id))
     project = result.scalar_one_or_none()

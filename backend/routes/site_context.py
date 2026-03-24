@@ -23,7 +23,7 @@ async def _require_project(project_id: uuid.UUID, db: AsyncSession) -> None:
 async def get_context(
     project_id: uuid.UUID,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: DB,
 ):
     await _require_project(project_id, db)
     result = await db.execute(
@@ -40,7 +40,7 @@ async def upsert_context(
     project_id: uuid.UUID,
     body: SiteContextUpsert,
     _: str = CurrentUser,
-    db: AsyncSession = DB,
+    db: DB,
 ):
     await _require_project(project_id, db)
 
