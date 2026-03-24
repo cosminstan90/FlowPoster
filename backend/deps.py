@@ -1,3 +1,4 @@
+from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
@@ -23,5 +24,5 @@ async def get_current_user(
 
 
 # Shorthand dependency aliases
-CurrentUser = Depends(get_current_user)
-DB = Depends(get_db)
+CurrentUser = Annotated[str, Depends(get_current_user)]
+DB = Annotated[AsyncSession, Depends(get_db)]
