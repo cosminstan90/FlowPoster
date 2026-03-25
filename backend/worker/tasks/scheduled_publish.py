@@ -115,3 +115,9 @@ async def scheduled_publish(ctx: dict) -> None:
             "scheduled_publish complete: %d jobs enqueued across %d campaigns",
             total_enqueued, len(campaigns),
         )
+        if total_enqueued > 0:
+            from backend.services.telegram_service import send_telegram
+            await send_telegram(
+                f"📅 <b>Publicare programată</b>\n"
+                f"{total_enqueued} pagini trimise la publicare"
+            )

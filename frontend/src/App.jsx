@@ -9,6 +9,7 @@ import PageEditor from "./pages/PageEditor";
 import CostReport from "./pages/CostReport";
 import Templates from "./pages/Templates";
 import TemplateEditPage from "./pages/TemplateEditPage";
+import Settings from "./pages/Settings";
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="/costs" element={<CostReport />} />
             <Route path="/templates" element={<Templates />} />
             <Route path="/templates/:id" element={<TemplateEditPage />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>
       </BrowserRouter>

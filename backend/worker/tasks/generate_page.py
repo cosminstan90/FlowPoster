@@ -37,6 +37,14 @@ async def run_generation_pipeline(ctx: dict, keyword_id_str: str) -> None:
                 page.quality_score,
                 page.cost_usd,
             )
+            from backend.services.telegram_service import send_telegram
+            kw_obj = await db.scalar(select(Keyword).where(Keyword.id == keyword_id))
+            kw_text = kw_obj.keyword if kw_obj else str(keyword_id)
+            await send_telegram(
+                f"✅ <b>Pagină generată</b>\n"
+                f"Keyword: <code>{kw_text}</code>\n"
+                f"Score: {page.quality_score} · Cost: ${page.cost_usd}"
+            )
         except Exception as exc:
             await db.rollback()
             logger.exception("Worker pipeline failed for keyword %s", keyword_id)
@@ -53,6 +61,14 @@ async def run_generation_pipeline(ctx: dict, keyword_id_str: str) -> None:
                         kw.error_message = str(exc)[:2000]
                         kw.updated_at = datetime.now(timezone.utc)
                         await err_db.commit()
+
+                    from backend.services.telegram_service import send_telegram
+                    kw_text = kw.keyword if kw else str(keyword_id)
+                    await send_telegram(
+                        f"❌ <b>Generare eșuată</b>\n"
+                        f"Keyword: <code>{kw_text}</code>\n"
+                        f"Eroare: {str(exc)[:300]}"
+                    )
                 except Exception:
                     logger.exception(
                         "Failed to set error status on keyword %s", keyword_id

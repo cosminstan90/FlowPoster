@@ -1,10 +1,11 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, PlusCircle, BarChart2, FileCode2, Sparkles } from "lucide-react";
+import { LayoutDashboard, PlusCircle, BarChart2, FileCode2, Sparkles, Settings } from "lucide-react";
 
 const NAV = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/costs", icon: BarChart2, label: "Costuri" },
   { to: "/templates", icon: FileCode2, label: "Template-uri" },
+  { to: "/settings", icon: Settings, label: "Setări" },
   { to: "/projects/new", icon: PlusCircle, label: "Proiect nou", highlight: true },
 ];
 

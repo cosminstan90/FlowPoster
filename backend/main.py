@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from sqlalchemy import text
 
 from backend.database import AsyncSessionLocal
+from backend.routes.api_keys import router as api_keys_router
 from backend.routes.auth import router as auth_router
 from backend.routes.campaigns import router as campaigns_router
 from backend.routes.costs import router as costs_router
@@ -14,6 +15,7 @@ from backend.routes.projects import router as projects_router
 from backend.routes.publish import router as publish_router
 from backend.routes.site_context import router as site_context_router
 from backend.routes.templates import router as templates_router
+from backend.routes.webhooks import router as webhooks_router
 from backend.services.template_seeder import seed_default_templates
 
 
@@ -36,6 +38,8 @@ app.include_router(costs_router)
 app.include_router(pages_router)
 app.include_router(publish_router)
 app.include_router(templates_router)
+app.include_router(api_keys_router)
+app.include_router(webhooks_router)
 
 
 @app.get("/health", tags=["health"])

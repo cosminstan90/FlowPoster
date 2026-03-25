@@ -4,6 +4,7 @@ from backend.models.prompt_template import PromptTemplate
 from backend.models.campaign import Campaign
 from backend.models.keyword import Keyword
 from backend.models.generated_page import GeneratedPage
+from backend.models.api_key import APIKey
 
 __all__ = [
     "Project",
@@ -12,4 +13,5 @@ __all__ = [
     "Campaign",
     "Keyword",
     "GeneratedPage",
+    "APIKey",
 ]

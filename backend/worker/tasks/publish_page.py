@@ -68,6 +68,15 @@ async def publish_page(ctx: dict, page_id_str: str) -> None:
             await db.commit()
             logger.info("Published page %s → %s", page_id, result["published_url"])
 
+            from backend.services.telegram_service import send_telegram
+            kw_text = keyword.keyword if keyword else str(page_id)
+            published_url = result.get("published_url", "")
+            await send_telegram(
+                f"🚀 <b>Pagină publicată</b>\n"
+                f"Keyword: <code>{kw_text}</code>\n"
+                f"URL: {published_url}"
+            )
+
         except Exception as exc:
             await db.rollback()
             logger.exception("Publish failed for page %s: %s", page_id, exc)
