@@ -9,6 +9,7 @@ from backend.routes.auth import router as auth_router
 from backend.routes.campaigns import router as campaigns_router
 from backend.routes.costs import router as costs_router
 from backend.routes.generation import router as generation_router
+from backend.routes.geo import router as geo_router
 from backend.routes.keywords import router as keywords_router
 from backend.routes.pages import router as pages_router
 from backend.routes.projects import router as projects_router
@@ -40,6 +41,7 @@ app.include_router(publish_router)
 app.include_router(templates_router)
 app.include_router(api_keys_router)
 app.include_router(webhooks_router)
+app.include_router(geo_router)
 
 
 @app.get("/health", tags=["health"])

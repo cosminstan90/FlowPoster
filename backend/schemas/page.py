@@ -53,6 +53,13 @@ class PageDetailOut(BaseModel):
     approved_at: datetime | None
     created_at: datetime
     breadcrumb: BreadcrumbContext | None = None
+    geo_score: int | None = None
+    geo_breakdown: dict | None = None
+    speakable_sections: list | None = None
+    geo_version: str | None = None
+    has_direct_answer: bool = False
+    has_comparison_table: bool = False
+    citation_density: float | None = None
 
 
 class PageUpdateRequest(BaseModel):

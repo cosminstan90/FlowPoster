@@ -61,6 +61,12 @@ export default function CampaignPage() {
   const [schedSaving, setSchedSaving] = useState(false);
   const [schedSaved, setSchedSaved] = useState(false);
 
+  // GEO/AEO
+  const [geoEnabled, setGeoEnabled] = useState(false);
+  const [geoMode, setGeoMode] = useState("balanced");
+  const [geoSaving, setGeoSaving] = useState(false);
+  const [geoSaved, setGeoSaved] = useState(false);
+
   // Auto-refresh
   const intervalRef = useRef(null);
 
@@ -84,6 +90,9 @@ export default function CampaignPage() {
     setSchedEnabled(sched.enabled || false);
     setSchedPages(sched.pages_per_day || 1);
     setSchedTime(sched.time_of_day || "10:00");
+    // Sync GEO state
+    setGeoEnabled(c?.geo_enabled || false);
+    setGeoMode(c?.geo_mode || "balanced");
   }, [id]);
 
   const load = useCallback(async () => {
@@ -191,6 +200,23 @@ export default function CampaignPage() {
     await importPaste(id, text);
     await fetchKeywords(1);
     await fetchCampaign();
+  };
+
+  const handleGeoToggle = async (enabled) => {
+    setGeoEnabled(enabled);
+    await updateCampaign(id, { geo_enabled: enabled, geo_mode: geoMode });
+    await fetchCampaign();
+  };
+
+  const handleSaveGeo = async () => {
+    setGeoSaving(true);
+    try {
+      await updateCampaign(id, { geo_enabled: geoEnabled, geo_mode: geoMode });
+      setGeoSaved(true);
+      setTimeout(() => setGeoSaved(false), 2000);
+    } finally {
+      setGeoSaving(false);
+    }
   };
 
   const handleSaveSchedule = async () => {
@@ -316,6 +342,52 @@ export default function CampaignPage() {
             </button>
           )}
         </div>
+      </div>
+
+      {/* GEO/AEO Mode */}
+      <div className="rounded-xl border border-border bg-bg-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className="text-sm font-medium text-white">Mod GEO/AEO</h3>
+            <p className="text-xs text-muted mt-0.5">Optimizare pentru AI: ChatGPT, Perplexity, Gemini</p>
+          </div>
+          <label className="relative inline-flex cursor-pointer items-center">
+            <input
+              type="checkbox"
+              checked={geoEnabled}
+              onChange={(e) => handleGeoToggle(e.target.checked)}
+              className="peer sr-only"
+            />
+            <div className="peer h-6 w-11 rounded-full bg-border after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-accent peer-checked:after:translate-x-full"></div>
+          </label>
+        </div>
+        {geoEnabled && (
+          <div className="space-y-3">
+            <label className="block text-xs text-muted">Mod optimizare</label>
+            <select
+              value={geoMode}
+              onChange={(e) => setGeoMode(e.target.value)}
+              className={FIELD}
+            >
+              <option value="balanced">Echilibrat (SEO + GEO)</option>
+              <option value="geo_first">GEO First — prioritate AI citability</option>
+              <option value="seo_first">SEO First — structură tradițională</option>
+            </select>
+            <div className="rounded-lg bg-purple-500/10 border border-purple-500/20 px-3 py-2 text-xs text-purple-300">
+              {geoMode === "geo_first" && "Conținut optimizat pentru a fi citat de ChatGPT, Perplexity și Gemini. Fiecare paragraf devine o afirmație citabilă."}
+              {geoMode === "seo_first" && "Structură SEO tradițională cu îmbunătățiri GEO. Ideal pentru site-uri cu autoritate deja stabilită."}
+              {geoMode === "balanced" && "Echilibru între SEO clasic și optimizare pentru AI. Recomandat pentru majoritatea site-urilor."}
+            </div>
+            <button
+              onClick={handleSaveGeo}
+              disabled={geoSaving}
+              className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50 transition"
+            >
+              {geoSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {geoSaved ? "Salvat!" : "Salvează GEO"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Scheduling */}

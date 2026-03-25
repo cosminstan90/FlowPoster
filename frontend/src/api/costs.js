@@ -18,3 +18,8 @@ export async function estimateCost(campaignId, keywordCount) {
   });
   return data;
 }
+
+export async function getGeoReport() {
+  const { data } = await client.get("/geo/report");
+  return data;
+}

@@ -27,6 +27,12 @@ logger = logging.getLogger(__name__)
 
 HAIKU = "claude-haiku-4-5-20251001"
 
+# GEO version constant (imported lazily but defined here to avoid NameError)
+try:
+    from backend.services.ai.geo_generator import GEO_VERSION
+except ImportError:
+    GEO_VERSION = "1.0"
+
 
 # ------------------------------------------------------------------
 # Helpers
@@ -152,7 +158,7 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
         faq_questions: list[str] = outline_data.get("faq_questions", [])
 
         # =============================================================
-        # Step 4 — Content Generator  (campaign model)
+        # Step 4 — Content Generator  (campaign model OR GEO generator)
         # =============================================================
         # Gather existing slugs for internal linking
         slug_rows = await db.execute(
@@ -164,25 +170,55 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
         )
         existing_slugs = [r[0] for r in slug_rows.all()]
 
-        sys_p, usr_p = prompts.content_generator(
-            keyword=kw.keyword,
-            outline_json=outline_result.text,
-            niche=site_ctx.niche,
-            target_audience=site_ctx.target_audience,
-            tone=site_ctx.tone,
-            topics_to_avoid=site_ctx.topics_to_avoid,
-            author_name=site_ctx.author_name,
-            author_bio=site_ctx.author_bio,
-            author_credentials=site_ctx.author_credentials,
-            existing_slugs=existing_slugs,
-            language=language,
-        )
-        content_result = await campaign_client.call(sys_p, usr_p, max_tokens=8192)
-        tokens.add(content_result)
+        internal_links: list[dict] = []
+        geo_direct_answer = ""
+        geo_speakable_sections: list[str] = []
+        geo_has_comparison_table = False
 
-        content_data = _parse_json(content_result.text)
-        content_html: str = content_data.get("content_html", "")
-        internal_links: list[dict] = content_data.get("internal_links_used", [])
+        if getattr(campaign, 'geo_enabled', False):
+            from backend.services.ai.geo_generator import generate_geo_content, GEO_VERSION
+            geo_result = await generate_geo_content(
+                keyword=kw.keyword,
+                search_intent=search_intent,
+                outline_json=outline_result.text,
+                niche=site_ctx.niche,
+                target_audience=site_ctx.target_audience,
+                tone=site_ctx.tone,
+                topics_to_avoid=site_ctx.topics_to_avoid or "",
+                author_name=site_ctx.author_name or "",
+                author_bio=site_ctx.author_bio or "",
+                author_credentials=site_ctx.author_credentials or "",
+                existing_slugs=existing_slugs,
+                language=language,
+                geo_mode=getattr(campaign, 'geo_mode', 'balanced'),
+                model=campaign_model,
+            )
+            tokens.add(geo_result.call_result)
+            content_html: str = geo_result.content_html
+            internal_links = []  # will be extracted from GEO result if needed
+            geo_direct_answer = geo_result.direct_answer
+            geo_speakable_sections = geo_result.speakable_sections
+            geo_has_comparison_table = geo_result.has_comparison_table
+        else:
+            sys_p, usr_p = prompts.content_generator(
+                keyword=kw.keyword,
+                outline_json=outline_result.text,
+                niche=site_ctx.niche,
+                target_audience=site_ctx.target_audience,
+                tone=site_ctx.tone,
+                topics_to_avoid=site_ctx.topics_to_avoid,
+                author_name=site_ctx.author_name,
+                author_bio=site_ctx.author_bio,
+                author_credentials=site_ctx.author_credentials,
+                existing_slugs=existing_slugs,
+                language=language,
+            )
+            content_result = await campaign_client.call(sys_p, usr_p, max_tokens=8192)
+            tokens.add(content_result)
+
+            content_data = _parse_json(content_result.text)
+            content_html: str = content_data.get("content_html", "")
+            internal_links = content_data.get("internal_links_used", [])
 
         # =============================================================
         # Step 5 — SEO Layer  (haiku)
@@ -215,6 +251,23 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
         except (json.JSONDecodeError, ValueError):
             logger.warning("Schema generation returned invalid JSON, storing as null")
 
+        # GEO Schema enhancement
+        if getattr(campaign, 'geo_enabled', False):
+            from backend.services.ai.geo_schema import build_geo_schema
+            is_howto = kw.keyword.lower().startswith(("cum ", "how ", "cum să", "how to", "cum se"))
+            is_concept = search_intent == "informational" and not is_howto
+            schema_markup = build_geo_schema(
+                existing_schema=schema_markup,
+                title=title,
+                keyword=kw.keyword,
+                content_html=content_html,
+                speakable_sections=geo_speakable_sections,
+                faq_items=[],
+                is_howto=is_howto,
+                is_concept=is_concept,
+                has_qa=len(faq_questions) >= 3,
+            )
+
         # =============================================================
         # Step 7 — Intent Validator  (haiku)
         # =============================================================
@@ -239,6 +292,26 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
             meta_description=meta_description,
         )
 
+        # GEO Scoring
+        geo_score_val = None
+        geo_breakdown = None
+        geo_citation_density = None
+        if getattr(campaign, 'geo_enabled', False):
+            from backend.services.geo_scorer import score_geo
+            geo = score_geo(
+                content_html=content_html,
+                keyword=kw.keyword,
+                direct_answer=geo_direct_answer,
+                speakable_sections=geo_speakable_sections,
+                has_comparison_table=geo_has_comparison_table,
+                schema_markup=schema_markup,
+                faq_items=[{"question": q} for q in faq_questions],
+                author_name=site_ctx.author_name,
+            )
+            geo_score_val = geo.score
+            geo_breakdown = geo.breakdown
+            geo_citation_density = geo.citation_density
+
         # =============================================================
         # Persist GeneratedPage
         # =============================================================
@@ -262,6 +335,13 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
             output_tokens=tokens.output_tokens,
             model_used=campaign_model,
             cost_usd=tokens.cost_usd,
+            geo_score=geo_score_val,
+            geo_breakdown=geo_breakdown,
+            speakable_sections=geo_speakable_sections if getattr(campaign, 'geo_enabled', False) else None,
+            geo_version=GEO_VERSION if getattr(campaign, 'geo_enabled', False) else None,
+            has_direct_answer=bool(geo_direct_answer),
+            has_comparison_table=geo_has_comparison_table,
+            citation_density=geo_citation_density,
         )
         db.add(page)
 

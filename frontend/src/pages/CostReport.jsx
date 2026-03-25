@@ -3,7 +3,7 @@ import { Loader2, TrendingUp, FileText, DollarSign } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
-import { getCostSummary, getProjectCost } from "../api/costs";
+import { getCostSummary, getProjectCost, getGeoReport } from "../api/costs";
 
 const ALERT_BADGE = {
   none:     { label: "OK",       cls: "bg-green-500/10 text-green-400" },
@@ -24,12 +24,17 @@ function monthOptions() {
 }
 
 export default function CostReport() {
+  const [activeTab, setActiveTab] = useState("costuri");
   const [summary, setSummary] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
   const [month, setMonth] = useState(monthOptions()[0].val);
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  // GEO tab state
+  const [geoData, setGeoData] = useState([]);
+  const [geoLoading, setGeoLoading] = useState(false);
 
   const months = monthOptions();
 
@@ -61,6 +66,20 @@ export default function CostReport() {
     loadDetail();
   }, [selectedId, month]);
 
+  useEffect(() => {
+    if (activeTab !== "geo") return;
+    async function loadGeo() {
+      setGeoLoading(true);
+      try {
+        const res = await getGeoReport();
+        setGeoData(res.data || []);
+      } finally {
+        setGeoLoading(false);
+      }
+    }
+    loadGeo();
+  }, [activeTab]);
+
   const totalCost = summary.reduce((s, r) => s + Number(r.total_usd || 0), 0);
   const totalPages = summary.reduce((s, r) => s + (r.pages_count || 0), 0);
   const avgCost = totalPages > 0 ? totalCost / totalPages : 0;
@@ -86,6 +105,28 @@ export default function CostReport() {
         <p className="text-sm text-muted">Luna curentă · toate proiectele</p>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 rounded-lg border border-border bg-bg-card p-1 w-fit">
+        <button
+          onClick={() => setActiveTab("costuri")}
+          className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${activeTab === "costuri" ? "bg-accent text-black" : "text-muted hover:text-white"}`}
+        >
+          Costuri
+        </button>
+        <button
+          onClick={() => setActiveTab("geo")}
+          className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${activeTab === "geo" ? "bg-purple-600 text-white" : "text-muted hover:text-white"}`}
+        >
+          GEO Performance
+        </button>
+      </div>
+
+      {activeTab === "geo" && (
+        <GeoPerformanceTab data={geoData} loading={geoLoading} />
+      )}
+
+      {activeTab === "costuri" && (
+        <>
       {/* Top 3 stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
@@ -247,6 +288,117 @@ export default function CostReport() {
           )}
         </div>
       )}
+      </>
+      )}
+    </div>
+  );
+}
+
+const GEO_MODE_LABELS = {
+  balanced: "Echilibrat",
+  geo_first: "GEO First",
+  seo_first: "SEO First",
+};
+
+const GEO_MODE_COLORS = {
+  balanced: "bg-blue-500/10 text-blue-400",
+  geo_first: "bg-purple-500/10 text-purple-400",
+  seo_first: "bg-green-500/10 text-green-400",
+};
+
+const FACTOR_LABELS = {
+  direct_answer: "Răspuns direct",
+  speakable_sections: "Secțiuni speakable",
+  qa_structure: "Structură Q&A",
+  statistics: "Statistici cu surse",
+  author_schema: "Schema autor",
+  definition_intro: "Definiție în intro",
+  comparison_table: "Tabel comparativ",
+  sentence_length: "Fraze scurte",
+};
+
+function GeoPerformanceTab({ data, loading }) {
+  if (loading) {
+    return (
+      <div className="flex h-40 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
+      </div>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="rounded-xl border border-border bg-bg-card p-8 text-center">
+        <p className="text-muted text-sm">Nicio campanie GEO activată.</p>
+        <p className="text-xs text-muted mt-1">Activează modul GEO/AEO în setările campaniei pentru a vedea statistici.</p>
+      </div>
+    );
+  }
+
+  // Find most failing factor across all campaigns
+  const allFails = {};
+  for (const row of data) {
+    for (const [factor, count] of Object.entries(row.failing_factors || {})) {
+      allFails[factor] = (allFails[factor] || 0) + Number(count);
+    }
+  }
+  const topFailFactor = Object.entries(allFails).sort((a, b) => b[1] - a[1])[0];
+
+  return (
+    <div className="space-y-4">
+      {topFailFactor && (
+        <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 px-4 py-3">
+          <p className="text-xs font-medium text-yellow-400 mb-0.5">Factor cu cele mai multe eșecuri</p>
+          <p className="text-sm text-white">
+            {FACTOR_LABELS[topFailFactor[0]] || topFailFactor[0]}
+            <span className="ml-2 text-muted text-xs">({topFailFactor[1]} pagini)</span>
+          </p>
+        </div>
+      )}
+
+      <div className="overflow-x-auto rounded-xl border border-border">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border bg-bg-card">
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted">Campanie</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted">Mod</th>
+              <th className="px-3 py-3 text-right text-xs font-medium text-muted">Pagini GEO</th>
+              <th className="px-3 py-3 text-right text-xs font-medium text-muted">Scor mediu</th>
+              <th className="px-3 py-3 text-center text-xs font-medium text-muted">Distribuție</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/50">
+            {data.map((row) => {
+              const scoreColor =
+                row.avg_geo_score == null ? "text-muted" :
+                row.avg_geo_score >= 70 ? "text-purple-400" :
+                row.avg_geo_score >= 40 ? "text-yellow-400" :
+                "text-red-400";
+              return (
+                <tr key={row.campaign_id} className="hover:bg-bg-hover transition">
+                  <td className="px-4 py-3 font-medium text-white">{row.campaign_name}</td>
+                  <td className="px-3 py-3">
+                    <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${GEO_MODE_COLORS[row.geo_mode] || "bg-gray-500/10 text-gray-400"}`}>
+                      {GEO_MODE_LABELS[row.geo_mode] || row.geo_mode}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-right text-muted">{row.pages_with_geo}</td>
+                  <td className={`px-3 py-3 text-right font-semibold ${scoreColor}`}>
+                    {row.avg_geo_score != null ? row.avg_geo_score : "—"}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <div className="flex items-center justify-center gap-2 text-xs">
+                      <span className="text-red-400">{row.score_distribution.low} ↓</span>
+                      <span className="text-yellow-400">{row.score_distribution.mid} ~</span>
+                      <span className="text-green-400">{row.score_distribution.high} ↑</span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

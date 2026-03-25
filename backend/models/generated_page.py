@@ -67,6 +67,13 @@ class GeneratedPage(Base):
     approved_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    geo_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    geo_breakdown: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    speakable_sections: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    geo_version: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    has_direct_answer: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    has_comparison_table: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    citation_density: Mapped[float | None] = mapped_column(Numeric(4, 2), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

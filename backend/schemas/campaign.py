@@ -19,6 +19,8 @@ class CampaignCreate(BaseModel):
     status: Literal["active", "paused", "completed"] = "active"
     publish_schedule: PublishSchedule | None = None
     prompt_template_id: UUID | None = None
+    geo_enabled: bool = False
+    geo_mode: str = "balanced"
 
 
 class CampaignUpdate(BaseModel):
@@ -29,6 +31,8 @@ class CampaignUpdate(BaseModel):
     status: Literal["active", "paused", "completed"] | None = None
     publish_schedule: PublishSchedule | None = None
     prompt_template_id: UUID | None = None
+    geo_enabled: bool | None = None
+    geo_mode: str | None = None
 
 
 class KeywordCounts(BaseModel):
@@ -55,6 +59,8 @@ class CampaignOut(BaseModel):
     publish_schedule: dict[str, Any] | None
     prompt_template_id: UUID | None
     created_at: datetime
+    geo_enabled: bool = False
+    geo_mode: str = "balanced"
 
 
 class CampaignDetail(CampaignOut):

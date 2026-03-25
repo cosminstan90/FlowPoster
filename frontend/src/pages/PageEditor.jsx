@@ -422,6 +422,79 @@ export default function PageEditor() {
             </div>
           )}
 
+          {/* GEO Score */}
+          {page.geo_score != null && (
+            <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4">
+              <h3 className="mb-3 text-sm font-medium text-white flex items-center gap-2">
+                <span className="text-purple-400">⚡</span> GEO Score
+              </h3>
+              <div className="flex flex-col items-center gap-3 mb-4">
+                <GeoScoreCircle score={page.geo_score} />
+              </div>
+
+              {/* Direct Answer Preview */}
+              {page.has_direct_answer && (
+                <div className="mb-3 rounded-lg border border-blue-500/20 bg-blue-500/10 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-400 mb-1">
+                    Răspuns direct pentru AI
+                  </p>
+                  <p className="text-xs text-white/80 leading-relaxed">
+                    {page.content_html
+                      ? (() => {
+                          const m = page.content_html.match(/<p[^>]*>(.*?)<\/p>/is);
+                          return m ? m[1].replace(/<[^>]+>/g, "").slice(0, 150) + "..." : "";
+                        })()
+                      : ""}
+                  </p>
+                </div>
+              )}
+
+              {/* Breakdown */}
+              {page.geo_breakdown && (
+                <div className="space-y-1.5">
+                  {Object.entries(page.geo_breakdown).map(([key, val]) => {
+                    const labels = {
+                      direct_answer: "Răspuns direct",
+                      speakable_sections: "Secțiuni speakable",
+                      qa_structure: "Structură Q&A",
+                      statistics: "Statistici cu surse",
+                      author_schema: "Schema autor",
+                      definition_intro: "Definiție în intro",
+                      comparison_table: "Tabel comparativ",
+                      sentence_length: "Fraze scurte",
+                    };
+                    return (
+                      <div key={key} className="flex items-center gap-2 text-xs">
+                        <span className={val.ok ? "text-green-400" : "text-red-400"}>
+                          {val.ok ? "✓" : "✗"}
+                        </span>
+                        <span className={val.ok ? "text-white" : "text-muted"}>
+                          {labels[key] || key}
+                        </span>
+                        <span className="ml-auto text-muted text-[10px]">
+                          {val.points}/{val.max}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Speakable sections */}
+              {page.speakable_sections?.length > 0 && (
+                <div className="mt-3 border-t border-border pt-3">
+                  <p className="text-[10px] uppercase tracking-wider text-muted mb-1.5">Secțiuni speakable</p>
+                  {page.speakable_sections.map((s, i) => (
+                    <p key={i} className="text-xs text-purple-300">• {s}</p>
+                  ))}
+                </div>
+              )}
+
+              {/* GEO Tips */}
+              {page.geo_breakdown && <GeoTips breakdown={page.geo_breakdown} />}
+            </div>
+          )}
+
           {/* Publish */}
           <div className="rounded-xl border border-border bg-bg-card p-4">
             <h3 className="mb-3 text-sm font-medium text-white">Publicare</h3>
@@ -608,5 +681,40 @@ function PageStatusBadge({ status }) {
     <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${map[status] || "bg-gray-500/10 text-gray-400"}`}>
       {status}
     </span>
+  );
+}
+
+function GeoScoreCircle({ score }) {
+  const r = 28, cx = 36, cy = 36;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (score / 100) * circ;
+  const color = score >= 70 ? "#a855f7" : score >= 40 ? "#f59e0b" : "#ef4444";
+  return (
+    <svg width="72" height="72" viewBox="0 0 72 72">
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#2a2d3a" strokeWidth="6" />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth="6"
+        strokeDasharray={circ} strokeDashoffset={offset}
+        strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} />
+      <text x={cx} y={cy + 5} textAnchor="middle" fill={color} fontSize="14" fontWeight="bold">{score}</text>
+    </svg>
+  );
+}
+
+function GeoTips({ breakdown }) {
+  const tips = [];
+  if (!breakdown.direct_answer?.ok) tips.push("Adaugă un răspuns direct în primul paragraf (max 60 cuvinte, conține keyword-ul)");
+  if (!breakdown.speakable_sections?.ok) tips.push("Marchează cel puțin 3 paragrafe cu <!-- speakable --> pentru AI assistants");
+  if (!breakdown.qa_structure?.ok) tips.push("Adaugă minim 3 întrebări H3 cu răspunsuri scurte (sub 50 cuvinte)");
+  if (!breakdown.statistics?.ok) tips.push("Include cel puțin 2 statistici cu surse explicite (ex: 'Conform Google, X%...')");
+  if (!breakdown.definition_intro?.ok) tips.push("Definește conceptul principal în primele 100 cuvinte");
+  if (!breakdown.comparison_table?.ok) tips.push("Adaugă un tabel comparativ pentru a fi citat în răspunsuri comparative");
+  if (tips.length === 0) return null;
+  return (
+    <div className="mt-3 border-t border-border pt-3">
+      <p className="text-[10px] uppercase tracking-wider text-purple-400 mb-2">Sfaturi GEO</p>
+      {tips.map((t, i) => (
+        <p key={i} className="text-[11px] text-muted mb-1">• {t}</p>
+      ))}
+    </div>
   );
 }
