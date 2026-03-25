@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Loader2, ChevronLeft, Upload, ClipboardList, Plus,
-  Zap, Globe, Download, Hash, AlertTriangle,
+  Zap, Globe, Download, Hash, AlertTriangle, Layers,
 } from "lucide-react";
 import { getCampaign, updateCampaign } from "../api/campaigns";
 import { getKeywords, deleteKeyword, importPaste } from "../api/keywords";
@@ -13,6 +13,7 @@ import BulkActionBar from "../components/BulkActionBar";
 import ImportCSVModal from "../components/ImportCSVModal";
 import PasteModal from "../components/PasteModal";
 import CostEstimatorModal from "../components/CostEstimatorModal";
+import ClusteringModal from "../components/ClusteringModal";
 import Modal from "../components/Modal";
 import { createKeyword } from "../api/keywords";
 
@@ -47,6 +48,7 @@ export default function CampaignPage() {
   const [showPaste, setShowPaste] = useState(false);
   const [showCost, setShowCost] = useState(false);
   const [showManual, setShowManual] = useState(false);
+  const [showCluster, setShowCluster] = useState(false);
   const [manualKw, setManualKw] = useState("");
   const [manualIntent, setManualIntent] = useState("");
   const [manualType, setManualType] = useState("");
@@ -295,6 +297,15 @@ export default function CampaignPage() {
         </button>
 
         <div className="ml-auto flex items-center gap-2">
+          {(counts.pending || 0) >= 3 && (
+            <button
+              onClick={() => setShowCluster(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-sm font-medium text-purple-400 hover:bg-purple-500/20 transition"
+            >
+              <Layers className="h-4 w-4" />
+              Analizează Clustere
+            </button>
+          )}
           {selectedIds.size > 0 && (
             <button
               onClick={() => setShowCost(true)}
@@ -413,6 +424,14 @@ export default function CampaignPage() {
         onConfirm={handleConfirmGenerate}
         campaignId={id}
         keywordCount={selectedIds.size || counts.total}
+      />
+
+      <ClusteringModal
+        open={showCluster}
+        onClose={() => setShowCluster(false)}
+        campaignId={id}
+        pendingCount={counts.pending || 0}
+        onDone={() => { fetchKeywords(pagination.page); fetchCampaign(); }}
       />
 
       {/* Manual add modal */}

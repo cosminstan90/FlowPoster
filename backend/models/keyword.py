@@ -8,6 +8,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.database import Base
 
 
+
+
 class Keyword(Base):
     __tablename__ = "keywords"
 
@@ -39,6 +41,8 @@ class Keyword(Base):
     cpc_usd: Mapped[float | None] = mapped_column(Numeric(6, 2), nullable=True)
     source: Mapped[str] = mapped_column(String(50), nullable=False, server_default="manual")
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cluster_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    cluster_role: Mapped[str | None] = mapped_column(String(20), nullable=True)  # primary / secondary / standalone
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

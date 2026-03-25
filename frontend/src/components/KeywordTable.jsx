@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Zap, Trash2, Pencil, Loader2, ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { Zap, Trash2, Pencil, Loader2, ChevronLeft, ChevronRight, FileText, Tag } from "lucide-react";
 import StatusBadge from "./StatusBadge";
 import Modal from "./Modal";
 import { updateKeywordStatus } from "../api/keywords";
@@ -26,7 +26,7 @@ function KdBadge({ kd }) {
 
 function VolDisplay({ vol }) {
   if (vol == null) return <span className="text-muted text-xs">—</span>;
-  const fmt = vol >= 1000 ? `${(vol / 1000).toFixed(1)}k` : String(vol);
+  const fmt = vol >= 1000 ? `${(vol / 1000).toFixed(1)}K` : String(vol);
   return <span className="text-xs text-white">{fmt}</span>;
 }
 
@@ -155,7 +155,10 @@ export default function KeywordTable({
                 const canDelete  = kw.status === "pending" || kw.status === "error";
                 const hasPage = ["draft", "approved", "published"].includes(kw.status);
                 return (
-                  <tr key={kw.id} className={`group transition hover:bg-bg-hover ${selectedIds.has(kw.id) ? "bg-accent/5" : ""}`}>
+                  <tr
+                    key={kw.id}
+                    className={`group transition hover:bg-bg-hover ${selectedIds.has(kw.id) ? "bg-accent/5" : ""} ${kw.cluster_role === "secondary" ? "opacity-80" : ""}`}
+                  >
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
@@ -165,12 +168,24 @@ export default function KeywordTable({
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-white">{kw.keyword}</span>
-                      {kw.error_message && (
-                        <p className="mt-0.5 text-[11px] text-red-400 truncate max-w-xs" title={kw.error_message}>
-                          {kw.error_message}
-                        </p>
-                      )}
+                      <div className={kw.cluster_role === "secondary" ? "pl-4" : ""}>
+                        <div className="flex items-center gap-1.5">
+                          {kw.cluster_role === "secondary" && (
+                            <Tag className="h-3 w-3 text-muted flex-shrink-0" />
+                          )}
+                          <span className={`text-sm ${kw.cluster_role === "secondary" ? "text-white/70" : "text-white"}`}>
+                            {kw.keyword}
+                          </span>
+                          {kw.cluster_role === "primary" && (
+                            <span className="rounded bg-green-500/10 px-1.5 py-0.5 text-[10px] font-medium text-green-400">P</span>
+                          )}
+                        </div>
+                        {kw.error_message && (
+                          <p className="mt-0.5 text-[11px] text-red-400 truncate max-w-xs" title={kw.error_message}>
+                            {kw.error_message}
+                          </p>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-3"><IntentBadge intent={kw.search_intent} /></td>
                     <td className="px-3 py-3">

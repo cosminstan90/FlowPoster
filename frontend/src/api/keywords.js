@@ -39,3 +39,11 @@ export async function updateKeywordStatus(id, status) {
   const { data } = await client.put(`/keywords/${id}/status`, { status });
   return data;
 }
+
+export async function clusterKeywords(campaignId, keywordIds = []) {
+  const { data } = await client.post("/keywords/cluster", {
+    campaign_id: campaignId,
+    keyword_ids: keywordIds,
+  });
+  return data;
+}

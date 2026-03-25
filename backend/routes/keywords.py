@@ -16,6 +16,10 @@ from backend.deps import CurrentUser, DB
 from backend.models import Campaign, Keyword
 from backend.schemas.common import APIResponse
 from backend.schemas.keyword import (
+    ClusterRequest,
+    ClusterResponse,
+    ClusterResult,
+    ClusterKeywordSummary,
     ImportPasteRequest,
     ImportResult,
     KeywordCreate,
@@ -23,6 +27,7 @@ from backend.schemas.keyword import (
     KeywordStatusUpdate,
     PaginatedKeywords,
 )
+from backend.services.ai.keyword_clusterer import cluster_keywords
 from backend.services.duplicate_guard import DuplicateGuard
 
 router = APIRouter(prefix="/keywords", tags=["keywords"])
@@ -345,6 +350,67 @@ async def delete_keyword(
 
     await db.delete(kw)
     return APIResponse.ok(data=None, message="Keyword deleted")
+
+
+@router.post("/cluster", response_model=APIResponse[ClusterResponse])
+async def cluster_campaign_keywords(
+    body: ClusterRequest,
+    _: CurrentUser,
+    db: DB,
+):
+    """
+    Cluster keywords using Claude Haiku.
+
+    If ``keyword_ids`` is empty, all *pending* keywords in the campaign are used.
+    Returns cluster assignments and saves cluster_id / cluster_role to each keyword row.
+    """
+    campaign = await db.scalar(select(Campaign).where(Campaign.id == body.campaign_id))
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+
+    kw_ids = list(body.keyword_ids)
+    if not kw_ids:
+        # Default: all pending keywords
+        result = await db.execute(
+            select(Keyword.id).where(
+                Keyword.campaign_id == body.campaign_id,
+                Keyword.status == "pending",
+            )
+        )
+        kw_ids = list(result.scalars().all())
+
+    if len(kw_ids) < 2:
+        raise HTTPException(status_code=422, detail="Need at least 2 keywords to cluster")
+
+    clusters = await cluster_keywords(kw_ids, body.campaign_id, db)
+
+    cluster_results: list[ClusterResult] = []
+    for c in clusters:
+        kw_summaries = [
+            ClusterKeywordSummary(
+                keyword=kw_text,
+                keyword_id=kw_id,
+                role="primary" if kw_text == c.primary_keyword else "secondary",
+            )
+            for kw_text, kw_id in c.keyword_ids.items()
+        ]
+        cluster_results.append(
+            ClusterResult(
+                cluster_id=str(c.cluster_id),
+                cluster_name=c.cluster_name,
+                primary_keyword=c.primary_keyword,
+                secondary_keywords=c.secondary_keywords,
+                recommendation=c.recommendation,
+                reasoning=c.reasoning,
+                keywords=kw_summaries,
+            )
+        )
+
+    total = sum(len(c.keyword_ids) for c in clusters)
+    return APIResponse.ok(
+        data=ClusterResponse(clusters=cluster_results, total_clustered=total),
+        message=f"Clustered {total} keywords into {len(clusters)} groups",
+    )
 
 
 @router.put("/{keyword_id}/status", response_model=APIResponse[KeywordOut])

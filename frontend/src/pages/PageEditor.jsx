@@ -266,6 +266,9 @@ export default function PageEditor() {
             />
           </div>
 
+          {/* SERP Preview */}
+          <SerpPreview title={title} slug={slug} meta={metaDesc} page={page} />
+
           {/* Content */}
           <div className="rounded-xl border border-border bg-bg-card p-4">
             <div className={SECTION_HDR}>
@@ -487,6 +490,109 @@ export default function PageEditor() {
 
         </div>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Pixel-width estimator using an off-screen Canvas
+// ---------------------------------------------------------------------------
+let _canvas = null;
+function estimatePx(text, font) {
+  if (!text) return 0;
+  if (typeof document === "undefined") return text.length * 7;
+  _canvas = _canvas || document.createElement("canvas");
+  const ctx = _canvas.getContext("2d");
+  ctx.font = font;
+  return Math.round(ctx.measureText(text).width);
+}
+
+// ---------------------------------------------------------------------------
+// SERP Preview
+// ---------------------------------------------------------------------------
+function SerpPreview({ title, slug, meta, page }) {
+  const domain = (() => {
+    if (page?.published_url) {
+      try { return new URL(page.published_url).hostname; } catch { /* */ }
+    }
+    return "yoursite.com";
+  })();
+
+  const titlePx  = estimatePx(title, "20px arial, sans-serif");
+  const metaChars = meta?.length || 0;
+  const metaPxEst = metaChars * 6;
+
+  const titleColor =
+    titlePx <= 580 ? "text-green-400" :
+    titlePx <= 600 ? "text-yellow-400" :
+                     "text-red-400";
+
+  const RULER_MAX = 700;
+  const markerPct = Math.min((titlePx / RULER_MAX) * 100, 100);
+  const lineColor =
+    titlePx <= 580 ? "bg-green-500" :
+    titlePx <= 600 ? "bg-yellow-500" :
+                     "bg-red-500";
+
+  return (
+    <div className="rounded-xl border border-border bg-bg-card p-4 space-y-3">
+      <p className="text-sm font-medium text-white">Previzualizare SERP</p>
+
+      {/* Google-style preview box */}
+      <div className="rounded-lg border border-border bg-white/5 p-4 space-y-1" style={{ maxWidth: 652 }}>
+        {/* Breadcrumb / URL */}
+        <p className="text-xs text-green-400 font-mono truncate">
+          {domain}{slug ? `/${slug}` : ""}
+        </p>
+
+        {/* Title */}
+        <p
+          className="text-[20px] leading-snug text-blue-400 cursor-pointer hover:underline"
+          style={{ maxWidth: 600, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}
+        >
+          {title || <span className="text-muted italic">Titlu pagină…</span>}
+        </p>
+
+        {/* Meta description */}
+        <p
+          className="text-sm text-gray-400 leading-snug"
+          style={{ maxHeight: "2.8em", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
+        >
+          {meta || <span className="italic text-muted">Meta description…</span>}
+        </p>
+      </div>
+
+      {/* Title pixel ruler */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-[11px]">
+          <span className="font-mono text-muted">Titlu: ~{titlePx}px</span>
+          <span className={`font-mono font-medium ${titleColor}`}>
+            {titlePx <= 580 ? "✓ OK" : titlePx <= 600 ? "⚠ Limită" : "✗ Prea lung"}
+          </span>
+        </div>
+        <div className="relative h-2 w-full rounded-full bg-border overflow-visible">
+          {/* Zone markers */}
+          <div className="absolute inset-y-0 left-0 rounded-l-full bg-green-500/20" style={{ width: `${(580/RULER_MAX)*100}%` }} />
+          <div className="absolute inset-y-0 bg-yellow-500/20" style={{ left: `${(580/RULER_MAX)*100}%`, width: `${(20/RULER_MAX)*100}%` }} />
+          <div className="absolute inset-y-0 rounded-r-full bg-red-500/20" style={{ left: `${(600/RULER_MAX)*100}%`, right: 0 }} />
+          {/* Indicator */}
+          <div
+            className={`absolute top-1/2 -translate-y-1/2 h-3 w-1 rounded-full ${lineColor} transition-all duration-150`}
+            style={{ left: `${markerPct}%` }}
+          />
+        </div>
+        <div className="flex justify-between font-mono text-[10px] text-muted/60">
+          <span>0</span><span>580</span><span>600</span><span>700px</span>
+        </div>
+      </div>
+
+      {/* Meta pixel estimate */}
+      <p className="text-[11px] font-mono text-muted">
+        Meta: {metaChars} ch · ~{metaPxEst}px
+        {metaChars >= 120 && metaChars <= 155
+          ? <span className="ml-1 text-green-400">✓</span>
+          : <span className="ml-1 text-yellow-400">⚠ ideal 120-155</span>}
+      </p>
     </div>
   );
 }

@@ -52,8 +52,38 @@ class KeywordOut(BaseModel):
     cpc_usd: Decimal | None = None
     source: str = "manual"
     error_message: str | None
+    cluster_id: UUID | None = None
+    cluster_role: str | None = None
     created_at: datetime
     updated_at: datetime
+
+
+# ── Clustering ────────────────────────────────────────────────────────────────
+
+class ClusterRequest(BaseModel):
+    campaign_id: UUID
+    keyword_ids: list[UUID] = []   # empty = all pending keywords in campaign
+
+
+class ClusterKeywordSummary(BaseModel):
+    keyword: str
+    keyword_id: UUID
+    role: str   # primary | secondary | standalone
+
+
+class ClusterResult(BaseModel):
+    cluster_id: str
+    cluster_name: str
+    primary_keyword: str
+    secondary_keywords: list[str]
+    recommendation: str
+    reasoning: str
+    keywords: list[ClusterKeywordSummary]
+
+
+class ClusterResponse(BaseModel):
+    clusters: list[ClusterResult]
+    total_clustered: int
 
 
 class PaginatedKeywords(BaseModel):
