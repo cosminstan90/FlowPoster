@@ -5,7 +5,6 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import case, extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Any
 from sqlalchemy.orm import selectinload
 
 from backend.deps import CurrentUser, DB
@@ -66,8 +65,8 @@ def _row_to_project_with_stats(row) -> ProjectWithStats:
 
 @router.get("", response_model=APIResponse[list[ProjectWithStats]])
 async def list_projects(
-    _: str = CurrentUser,
-    db: Any = DB,
+    _: CurrentUser,
+    db: DB,
 ):
     result = await db.execute(_build_stats_query())
     rows = result.all()
@@ -78,8 +77,8 @@ async def list_projects(
 @router.post("", response_model=APIResponse[ProjectOut], status_code=status.HTTP_201_CREATED)
 async def create_project(
     body: ProjectCreate,
-    _: str = CurrentUser,
-    db: Any = DB,
+    _: CurrentUser,
+    db: DB,
 ):
     project = Project(**body.model_dump())
     db.add(project)
@@ -91,8 +90,8 @@ async def create_project(
 @router.get("/{project_id}", response_model=APIResponse[ProjectDetail])
 async def get_project(
     project_id: uuid.UUID,
-    _: str = CurrentUser,
-    db: Any = DB,
+    _: CurrentUser,
+    db: DB,
 ):
     # Stats row
     result = await db.execute(_build_stats_query().where(Project.id == project_id))
@@ -119,8 +118,8 @@ async def get_project(
 async def update_project(
     project_id: uuid.UUID,
     body: ProjectUpdate,
-    _: str = CurrentUser,
-    db: Any = DB,
+    _: CurrentUser,
+    db: DB,
 ):
     result = await db.execute(select(Project).where(Project.id == project_id))
     project = result.scalar_one_or_none()
@@ -138,8 +137,8 @@ async def update_project(
 @router.delete("/{project_id}", response_model=APIResponse[None])
 async def delete_project(
     project_id: uuid.UUID,
-    _: str = CurrentUser,
-    db: Any = DB,
+    _: CurrentUser,
+    db: DB,
 ):
     result = await db.execute(select(Project).where(Project.id == project_id))
     project = result.scalar_one_or_none()
