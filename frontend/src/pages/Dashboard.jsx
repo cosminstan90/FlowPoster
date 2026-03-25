@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Loader2, Sparkles, FolderPlus } from "lucide-react";
 import StatsBar from "../components/StatsBar";
 import ProjectCard from "../components/ProjectCard";
-import { getProjects } from "../api/projects";
+import NewProjectModal from "../components/NewProjectModal";
+import { getProjects, createProject } from "../api/projects";
 import { getCostSummary } from "../api/costs";
 
 export default function Dashboard() {
@@ -11,6 +12,7 @@ export default function Dashboard() {
   const [projects, setProjects] = useState([]);
   const [costMap, setCostMap] = useState({});
   const [loading, setLoading] = useState(true);
+  const [showNewProject, setShowNewProject] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -32,6 +34,11 @@ export default function Dashboard() {
     }
     load();
   }, []);
+
+  const handleCreateProject = async (payload) => {
+    const res = await createProject(payload);
+    navigate(`/projects/${res.data.id}`);
+  };
 
   const totalPublished = projects.reduce((s, p) => s + (p.stats?.total_pages_published ?? 0), 0);
   const totalKeywords = projects.reduce((s, p) => s + (p.stats?.total_keywords ?? 0), 0);
@@ -58,7 +65,7 @@ export default function Dashboard() {
           <p className="text-muted text-lg mt-1">Urmărește performanța proiectelor tale SEO și optimizările generate de AI.</p>
         </div>
         <button
-          onClick={() => navigate("/projects/new")}
+          onClick={() => setShowNewProject(true)}
           className="glass-button flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent to-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent/20 hover:shadow-accent/40"
         >
           <FolderPlus className="h-4 w-4" />
@@ -91,7 +98,7 @@ export default function Dashboard() {
             <h3 className="text-xl font-display font-semibold text-white mb-2">Niciun proiect în desfășurare</h3>
             <p className="text-muted mb-6 max-w-sm text-sm">Nu ai creat încă niciun proiect. Începe automatizarea SEO adăugând primul tău website.</p>
             <button
-              onClick={() => navigate("/projects/new")}
+              onClick={() => setShowNewProject(true)}
               className="glass-button rounded-xl bg-surface border border-border px-6 py-2.5 text-sm font-medium text-white hover:border-accent/50 hover:bg-white/5 transition-all"
             >
               Creează primul proiect
@@ -112,6 +119,11 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      <NewProjectModal
+        open={showNewProject}
+        onClose={() => setShowNewProject(false)}
+        onSave={handleCreateProject}
+      />
     </div>
   );
 }
