@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import AppLayout from "./layouts/AppLayout";
 import Login from "./pages/Login";
@@ -18,6 +18,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route element={<AppLayout />}>
             <Route index element={<Dashboard />} />
+            <Route path="/projects/new" element={<Navigate to="/" replace />} />
             <Route path="/projects/:id" element={<ProjectPage />} />
             <Route path="/campaigns/:id" element={<CampaignPage />} />
             <Route path="/pages/:id" element={<PageEditor />} />
