@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import Modal from "./Modal";
 
 const FIELD = "w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-white outline-none transition focus:border-accent";
@@ -26,12 +26,14 @@ const EMPTY = {
 export default function NewProjectModal({ open, onClose, onSave }) {
   const [form, setForm] = useState(EMPTY);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
     try {
       let cms_config = null;
       if (form.cms_type === "wordpress") {
@@ -57,6 +59,8 @@ export default function NewProjectModal({ open, onClose, onSave }) {
       });
       setForm(EMPTY);
       onClose();
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message || "A apărut o eroare. Încearcă din nou.");
     } finally {
       setLoading(false);
     }
@@ -145,6 +149,12 @@ export default function NewProjectModal({ open, onClose, onSave }) {
               <label className={LABEL}>Secret</label>
               <input type="password" value={form.php_secret} onChange={set("php_secret")} className={FIELD} placeholder="secret-key" />
             </div>
+          </div>
+        )}
+        {error && (
+          <div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-sm text-red-400">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
           </div>
         )}
       </form>

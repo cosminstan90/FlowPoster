@@ -36,8 +36,9 @@ export default function Dashboard() {
   }, []);
 
   const handleCreateProject = async (payload) => {
-    const res = await createProject(payload);
-    navigate(`/projects/${res.data.id}`);
+    await createProject(payload);
+    const projRes = await getProjects();
+    setProjects(projRes.data || []);
   };
 
   const totalPublished = projects.reduce((s, p) => s + (p.stats?.total_pages_published ?? 0), 0);
