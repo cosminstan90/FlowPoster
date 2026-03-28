@@ -10,6 +10,7 @@ import {
   updatePageStatus,
   findPageImage,
   regenerateSection,
+  publishPage,
 } from "../api/pages";
 import QualityScoreCircle from "../components/QualityScoreCircle";
 import FaqEditor from "../components/FaqEditor";
@@ -541,12 +542,20 @@ export default function PageEditor() {
               )}
               {(page.status === "draft" || page.status === "approved") && (
                 <button
-                  onClick={() => handleStatusChange("published")}
+                  onClick={async () => {
+                    setStatusLoading(true);
+                    try {
+                      const res = await publishPage(id);
+                      setPage((p) => ({ ...p, status: "published", published_url: res.data?.data?.published_url || p.published_url }));
+                    } finally {
+                      setStatusLoading(false);
+                    }
+                  }}
                   disabled={statusLoading}
                   className="flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50 transition"
                 >
                   {statusLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
-                  Publică
+                  Publică pe site
                 </button>
               )}
               {page.status !== "rejected" && page.status !== "draft" && (

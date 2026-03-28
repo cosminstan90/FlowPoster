@@ -6,3 +6,4 @@ export const updatePage = (id, data) => api.put(`/pages/${id}`, data);
 export const updatePageStatus = (id, status) => api.put(`/pages/${id}/status`, { status });
 export const findPageImage = (id) => api.post(`/pages/${id}/find-image`);
 export const regenerateSection = (id, section) => api.post(`/pages/${id}/regenerate`, { section });
+export const publishPage = (id) => api.post(`/publish/page/${id}`);
