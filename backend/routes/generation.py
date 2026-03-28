@@ -24,38 +24,6 @@ router = APIRouter(prefix="/generate", tags=["generation"])
 
 
 @router.post(
-    "/{keyword_id}",
-    response_model=APIResponse[GeneratedPageOut],
-    status_code=status.HTTP_201_CREATED,
-)
-async def generate_single(
-    keyword_id: uuid.UUID,
-    _: CurrentUser,
-    db: DB,
-):
-    """Run the full AI generation pipeline for one keyword (synchronous)."""
-    kw = await db.scalar(select(Keyword).where(Keyword.id == keyword_id))
-    if not kw:
-        raise HTTPException(status_code=404, detail="Keyword not found")
-
-    if kw.status not in ("pending", "error"):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Keyword status is '{kw.status}'; must be pending or error to generate",
-        )
-
-    try:
-        page = await run_pipeline(keyword_id, db)
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
-
-    return APIResponse.ok(
-        data=GeneratedPageOut.model_validate(page),
-        message="Generation complete",
-    )
-
-
-@router.post(
     "/bulk",
     response_model=APIResponse[BulkGenerateResult],
 )
@@ -138,4 +106,36 @@ async def generate_bulk(
             estimate=estimate,
         ),
         message=f"Enqueued {len(queued_ids)} keyword(s) for generation",
+    )
+
+
+@router.post(
+    "/{keyword_id}",
+    response_model=APIResponse[GeneratedPageOut],
+    status_code=status.HTTP_201_CREATED,
+)
+async def generate_single(
+    keyword_id: uuid.UUID,
+    _: CurrentUser,
+    db: DB,
+):
+    """Run the full AI generation pipeline for one keyword (synchronous)."""
+    kw = await db.scalar(select(Keyword).where(Keyword.id == keyword_id))
+    if not kw:
+        raise HTTPException(status_code=404, detail="Keyword not found")
+
+    if kw.status not in ("pending", "error"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Keyword status is '{kw.status}'; must be pending or error to generate",
+        )
+
+    try:
+        page = await run_pipeline(keyword_id, db)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    return APIResponse.ok(
+        data=GeneratedPageOut.model_validate(page),
+        message="Generation complete",
     )
