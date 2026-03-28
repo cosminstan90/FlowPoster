@@ -544,11 +544,25 @@ export default function CampaignPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={LABEL}>Intent (opțional)</label>
-              <input value={manualIntent} onChange={(e) => setManualIntent(e.target.value)} className={FIELD} placeholder="informational" />
+              <select value={manualIntent} onChange={(e) => setManualIntent(e.target.value)} className={FIELD}>
+                <option value="">— selectează —</option>
+                <option value="informational">Informational</option>
+                <option value="navigational">Navigational</option>
+                <option value="transactional">Transactional</option>
+                <option value="commercial">Commercial</option>
+              </select>
             </div>
             <div>
               <label className={LABEL}>Tip pagină (opțional)</label>
-              <input value={manualType} onChange={(e) => setManualType(e.target.value)} className={FIELD} placeholder="blog_post" />
+              <select value={manualType} onChange={(e) => setManualType(e.target.value)} className={FIELD}>
+                <option value="">— selectează —</option>
+                <option value="blog_post">Blog post</option>
+                <option value="landing_page">Landing page</option>
+                <option value="product_review">Product review</option>
+                <option value="how_to">How-to</option>
+                <option value="listicle">Listicle</option>
+                <option value="comparison">Comparison</option>
+              </select>
             </div>
           </div>
         </form>
