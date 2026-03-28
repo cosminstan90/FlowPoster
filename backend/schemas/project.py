@@ -13,7 +13,7 @@ class ProjectCreate(BaseModel):
     domain: str
     description: str | None = None
     monthly_budget_usd: Decimal = Decimal("0")
-    cms_type: Literal["wordpress", "php_custom"]
+    cms_type: Literal["wordpress", "php_custom", "velocitycms", "dreamcms"]
     cms_config: dict[str, Any] | None = None
 
 
@@ -22,7 +22,7 @@ class ProjectUpdate(BaseModel):
     domain: str | None = None
     description: str | None = None
     monthly_budget_usd: Decimal | None = None
-    cms_type: Literal["wordpress", "php_custom"] | None = None
+    cms_type: Literal["wordpress", "php_custom", "velocitycms", "dreamcms"] | None = None
     cms_config: dict[str, Any] | None = None
 
 
