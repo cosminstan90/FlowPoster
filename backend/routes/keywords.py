@@ -170,12 +170,12 @@ async def _run_import(
     status_code=status.HTTP_200_OK,
 )
 async def import_csv(
+    _: CurrentUser,
+    db: DB,
     campaign_id: uuid.UUID = Form(...),
     file: UploadFile = File(...),
     column_mapping: str | None = Form(None),
     source: str = Form("manual"),
-    _: CurrentUser,
-    db: DB,
 ):
     """
     Import keywords from a CSV file.
@@ -294,13 +294,13 @@ async def create_keyword(
 
 @router.get("", response_model=APIResponse[PaginatedKeywords])
 async def list_keywords(
+    _: CurrentUser,
+    db: DB,
     campaign_id: uuid.UUID = Query(...),
     status_filter: str | None = Query(None, alias="status"),
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=500),
     sort: str = Query("volume", description="volume | created"),
-    _: CurrentUser,
-    db: DB,
 ):
     base = select(Keyword).where(Keyword.campaign_id == campaign_id)
     if status_filter:

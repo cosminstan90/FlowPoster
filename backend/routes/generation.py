@@ -61,9 +61,9 @@ async def generate_single(
 )
 async def generate_bulk(
     body: BulkGenerateRequest,
-    confirm: bool = Query(False, description="Set to true to actually enqueue jobs"),
     _: CurrentUser,
     db: DB,
+    confirm: bool = Query(False, description="Set to true to actually enqueue jobs"),
 ):
     """
     Bulk generation with cost gate.

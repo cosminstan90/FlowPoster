@@ -48,9 +48,9 @@ def _parse_month(month_str: str | None) -> tuple[int, int]:
 )
 async def project_cost(
     project_id: uuid.UUID,
-    month: str | None = Query(None, description="YYYY-MM"),
     _: CurrentUser,
     db: DB,
+    month: str | None = Query(None, description="YYYY-MM"),
 ):
     project = await db.scalar(select(Project).where(Project.id == project_id))
     if not project:
@@ -90,9 +90,9 @@ async def project_cost(
 )
 async def campaign_cost(
     campaign_id: uuid.UUID,
-    month: str | None = Query(None, description="YYYY-MM"),
     _: CurrentUser,
     db: DB,
+    month: str | None = Query(None, description="YYYY-MM"),
 ):
     campaign = await db.scalar(select(Campaign).where(Campaign.id == campaign_id))
     if not campaign:
