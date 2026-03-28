@@ -38,8 +38,8 @@ def _counts_query(campaign_id: uuid.UUID):
 
 
 def _row_to_detail(row) -> CampaignDetail:
-    out = CampaignDetail.model_validate(row.Campaign)
-    out.keyword_counts = KeywordCounts(
+    data = CampaignOut.model_validate(row.Campaign).model_dump()
+    data["keyword_counts"] = KeywordCounts(
         total=row.total or 0,
         pending=row.pending or 0,
         queued=row.queued or 0,
@@ -49,7 +49,7 @@ def _row_to_detail(row) -> CampaignDetail:
         published=row.published or 0,
         error=row.error or 0,
     )
-    return out
+    return CampaignDetail.model_validate(data)
 
 
 @router.get("", response_model=APIResponse[list[CampaignOut]])
