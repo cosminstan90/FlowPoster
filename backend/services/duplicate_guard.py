@@ -113,15 +113,24 @@ class DuplicateGuard:
     # ------------------------------------------------------------------
 
     @classmethod
-    async def build(cls, campaign_id, db) -> "DuplicateGuard":
-        """Load existing keywords from DB and construct the guard."""
+    async def build(cls, campaign_id, db, exclude_keyword_id=None) -> "DuplicateGuard":
+        """Load existing keywords from DB and construct the guard.
+
+        Args:
+            campaign_id: The campaign to load keywords from.
+            db: Async DB session.
+            exclude_keyword_id: Optional keyword ID to exclude from the
+                same-campaign list (pass the ID of the keyword currently
+                being processed so it doesn't match itself).
+        """
         from sqlalchemy import select
         from backend.models import Campaign, Keyword
 
-        # Existing keywords in this campaign
-        same_rows = await db.execute(
-            select(Keyword.keyword).where(Keyword.campaign_id == campaign_id)
-        )
+        # Existing keywords in this campaign (excluding the one being generated)
+        stmt = select(Keyword.keyword).where(Keyword.campaign_id == campaign_id)
+        if exclude_keyword_id is not None:
+            stmt = stmt.where(Keyword.id != exclude_keyword_id)
+        same_rows = await db.execute(stmt)
         campaign_norms = [normalize(r[0]) for r in same_rows.all()]
 
         # Keywords in other campaigns of the same project

@@ -134,7 +134,7 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
         # =============================================================
         # Step 2 — Duplicate Guard
         # =============================================================
-        guard = await DuplicateGuard.build(kw.campaign_id, db)
+        guard = await DuplicateGuard.build(kw.campaign_id, db, exclude_keyword_id=kw.id)
         dup_check = guard.check(kw.keyword)
         if dup_check.is_duplicate:
             await _set_error(kw, "Duplicate keyword detected (similarity > 85%)", db)
