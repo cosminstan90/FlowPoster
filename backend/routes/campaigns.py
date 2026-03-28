@@ -54,9 +54,9 @@ def _row_to_detail(row) -> CampaignDetail:
 
 @router.get("", response_model=APIResponse[list[CampaignOut]])
 async def list_campaigns(
-    project_id: uuid.UUID | None = None,
     _: CurrentUser,
     db: DB,
+    project_id: uuid.UUID | None = None,
 ):
     stmt = select(Campaign).order_by(Campaign.created_at.desc())
     if project_id is not None:
