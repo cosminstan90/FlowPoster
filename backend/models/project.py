@@ -21,7 +21,8 @@ class Project(Base):
         Numeric(10, 2), nullable=False, server_default="0"
     )
     cms_type: Mapped[str] = mapped_column(
-        Enum("wordpress", "php_custom", name="cms_type_enum"), nullable=False
+        Enum("wordpress", "php_custom", "velocitycms", "dreamcms", name="cms_type_enum"),
+        nullable=False,
     )
     cms_config: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     budget_alert_level: Mapped[str] = mapped_column(

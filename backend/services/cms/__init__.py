@@ -5,6 +5,12 @@ Usage::
 
     adapter = get_adapter(project)
     result  = await adapter.publish(page)
+
+Supported cms_type values:
+    wordpress    — WordPress REST API (username + app_password)
+    php_custom   — Generic PHP webhook (endpoint_url + secret_token)
+    velocitycms  — VelocityCMS publisher API (api_url + publisher_token)
+    dreamcms     — DreamCMS publisher API   (api_url + publisher_token)
 """
 from __future__ import annotations
 
@@ -12,18 +18,31 @@ from fastapi import HTTPException
 
 from backend.models.project import Project
 from backend.services.cms.base_adapter import PublishAdapter
+from backend.services.cms.dreamcms import DreamCMSAdapter
 from backend.services.cms.php_custom import PHPCustomAdapter
+from backend.services.cms.velocitycms import VelocityCMSAdapter
 from backend.services.cms.wordpress import WordPressAdapter
 
 
 def get_adapter(project: Project) -> PublishAdapter:
     config = project.cms_config or {}
+
     if project.cms_type == "wordpress":
         _require_keys(config, ["url", "username", "app_password"], "WordPress")
         return WordPressAdapter(config)
+
     elif project.cms_type == "php_custom":
         _require_keys(config, ["endpoint_url", "secret_token"], "PHP Custom")
         return PHPCustomAdapter(config)
+
+    elif project.cms_type == "velocitycms":
+        _require_keys(config, ["api_url", "publisher_token"], "VelocityCMS")
+        return VelocityCMSAdapter(config)
+
+    elif project.cms_type == "dreamcms":
+        _require_keys(config, ["api_url", "publisher_token"], "DreamCMS")
+        return DreamCMSAdapter(config)
+
     else:
         raise HTTPException(status_code=400, detail=f"Unknown CMS type: {project.cms_type}")
 
