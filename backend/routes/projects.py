@@ -54,13 +54,13 @@ def _build_stats_query():
 
 
 def _row_to_project_with_stats(row) -> ProjectWithStats:
-    out = ProjectWithStats.model_validate(row.Project)
-    out.stats = ProjectStats(
+    data = ProjectOut.model_validate(row.Project).model_dump()
+    data["stats"] = ProjectStats(
         total_keywords=row.total_keywords or 0,
         total_pages_published=row.total_pages_published or 0,
         cost_this_month=Decimal(str(row.cost_this_month or 0)),
     )
-    return out
+    return ProjectWithStats.model_validate(data)
 
 
 @router.get("", response_model=APIResponse[list[ProjectWithStats]])
