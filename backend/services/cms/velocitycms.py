@@ -68,14 +68,19 @@ class VelocityCMSAdapter(PublishAdapter):
     # ---------------------------------------------------------------- publish
 
     async def publish(self, page: GeneratedPage) -> PublishResult:
+        # Truncate to VelocityCMS column limits
+        title = (page.title or "")[:191]
+        slug = (page.slug or "")[:191]
+        meta_description = (page.meta_description or "")[:155] or None
+
         payload: dict = {
             # ── Required ────────────────────────────────────────────────────
             "siteId": self._site_id,
-            "title": page.title or "",
-            "slug": page.slug or "",
+            "title": title,
+            "slug": slug,
             "contentHtml": page.content_html or "",
             # ── Optional content ────────────────────────────────────────────
-            "metaDescription": page.meta_description or None,
+            "metaDescription": meta_description,
             "faqItems": page.faq_items or [],
             "featuredImageUrl": page.featured_image_url or None,
             "featuredImageCredit": page.featured_image_credit or None,

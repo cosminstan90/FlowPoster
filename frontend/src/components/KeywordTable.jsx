@@ -4,7 +4,7 @@ import { Zap, Trash2, Pencil, Loader2, ChevronLeft, ChevronRight, FileText, Tag 
 import StatusBadge from "./StatusBadge";
 import Modal from "./Modal";
 import { updateKeywordStatus } from "../api/keywords";
-import { getPageByKeyword } from "../api/pages";
+import { getPageByKeyword, publishPage } from "../api/pages";
 
 const INTENT_STYLE = {
   informational: "bg-blue-500/10 text-blue-400",
@@ -105,7 +105,18 @@ export default function KeywordTable({
     if (!editKw) return;
     setEditLoading(true);
     try {
-      await updateKeywordStatus(editKw.id, editStatus);
+      if (editStatus === "published") {
+        // Publish to CMS instead of just updating status
+        const pageRes = await getPageByKeyword(editKw.id);
+        const pageId = pageRes.data?.data?.id;
+        if (pageId) {
+          await publishPage(pageId);
+        } else {
+          await updateKeywordStatus(editKw.id, editStatus);
+        }
+      } else {
+        await updateKeywordStatus(editKw.id, editStatus);
+      }
       onStatusChanged?.();
       setEditKw(null);
     } finally {
