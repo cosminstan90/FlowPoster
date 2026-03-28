@@ -18,6 +18,9 @@ from backend.services.ai.prompts import (
 
 SUPPORTED_SECTIONS = {"intro", "body", "faq", "meta"}
 
+HAIKU = "claude-haiku-4-5-20251001"
+SONNET = "claude-sonnet-4-20250514"
+
 
 async def regenerate_section(
     page: GeneratedPage,
@@ -32,7 +35,8 @@ async def regenerate_section(
     if section not in SUPPORTED_SECTIONS:
         raise ValueError(f"Unknown section '{section}'. Choose from {SUPPORTED_SECTIONS}.")
 
-    client = ClaudeClient()
+    haiku_client = ClaudeClient(HAIKU)
+    sonnet_client = ClaudeClient(SONNET)
 
     if section == "intro":
         sys_p, usr_p = intro_regenerator(
@@ -42,9 +46,9 @@ async def regenerate_section(
             tone=tone,
             language=language,
         )
-        result = await client.call(system=sys_p, user=usr_p, model="haiku", max_tokens=800)
+        result = await haiku_client.call(system=sys_p, user=usr_p, max_tokens=800)
         # Replace intro paragraphs at start of content (first <p> block)
-        new_intro = result.content.strip()
+        new_intro = result.text.strip()
         rest = _strip_intro(page.content_html or "")
         page.content_html = new_intro + "\n" + rest
         return {"content_html": page.content_html}
@@ -57,8 +61,8 @@ async def regenerate_section(
             tone=tone,
             language=language,
         )
-        result = await client.call(system=sys_p, user=usr_p, model="sonnet", max_tokens=2000)
-        page.content_html = result.content.strip()
+        result = await sonnet_client.call(system=sys_p, user=usr_p, max_tokens=2000)
+        page.content_html = result.text.strip()
         return {"content_html": page.content_html}
 
     elif section == "faq":
@@ -67,9 +71,9 @@ async def regenerate_section(
             faq_items=page.faq_items or [],
             language=language,
         )
-        result = await client.call(system=sys_p, user=usr_p, model="haiku", max_tokens=1200)
+        result = await haiku_client.call(system=sys_p, user=usr_p, max_tokens=1200)
         try:
-            new_faq = json.loads(result.content.strip())
+            new_faq = json.loads(result.text.strip())
             if isinstance(new_faq, list):
                 page.faq_items = new_faq
         except json.JSONDecodeError:
@@ -83,9 +87,9 @@ async def regenerate_section(
             content_snippet=page.content_html or "",
             language=language,
         )
-        result = await client.call(system=sys_p, user=usr_p, model="haiku", max_tokens=300)
+        result = await haiku_client.call(system=sys_p, user=usr_p, max_tokens=300)
         try:
-            meta = json.loads(result.content.strip())
+            meta = json.loads(result.text.strip())
             if meta.get("title"):
                 page.title = meta["title"]
             if meta.get("meta_description"):
