@@ -5,7 +5,7 @@
 
 set -e
 
-APP_DIR="/opt/flowposter"
+APP_DIR="/home/flowposter/app"
 cd "$APP_DIR"
 
 echo "==> Pulling latest code..."
