@@ -52,27 +52,10 @@ class _TokenAccumulator:
         self.cost_usd += result.cost_usd
 
 
-def _repair_json(text: str) -> str:
-    """
-    Try to fix the most common LLM JSON issues:
-    1. HTML attribute double-quotes: attr="val" → attr='val'
-    2. Trailing commas before } or ]
-    3. Literal tab/newline characters inside string values
-    """
-    # Convert HTML attribute double-quotes to single-quotes
-    # Matches: word=  "content without raw < > or newline"
-    text = re.sub(r'(\w+)="([^"<>\n\r]*)"', r"\1='\2'", text)
-    # Remove trailing commas before closing braces/brackets
-    text = re.sub(r",\s*([}\]])", r"\1", text)
-    # Replace literal (unescaped) tab characters inside strings
-    text = text.replace("\t", "\\t")
-    return text
-
-
 def _parse_json(text: str) -> dict:
     """
-    Extract and parse JSON from LLM output.
-    Falls back to a repair pass before raising.
+    Extract and parse JSON from LLM output that may contain markdown fences.
+    Tries a basic trailing-comma repair before raising.
     """
     cleaned = text.strip()
     # Strip markdown code fences
@@ -80,20 +63,52 @@ def _parse_json(text: str) -> dict:
     if m:
         cleaned = m.group(1).strip()
 
-    # First attempt — standard parse
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
-        pass
-
-    # Second attempt — after basic repairs
-    try:
-        return json.loads(_repair_json(cleaned))
-    except json.JSONDecodeError as exc:
-        # Log a snippet to help debug future issues
+        # Remove trailing commas before } or ]
+        repaired = re.sub(r",\s*([}\]])", r"\1", cleaned)
         snippet = cleaned[:200].replace("\n", " ")
-        logger.warning("JSON repair failed. Snippet: %s", snippet)
-        raise
+        try:
+            return json.loads(repaired)
+        except json.JSONDecodeError as exc:
+            logger.warning("JSON parse failed. Snippet: %s", snippet)
+            raise
+
+
+def _parse_delimited(text: str) -> dict:
+    """
+    Parse the content_generator delimited format:
+        <summary_html>...</summary_html>
+        <content_html>...</content_html>
+        <links_json>[...]</links_json>
+    Returns a dict with those three keys.
+    """
+    def _extract(tag: str) -> str:
+        m = re.search(rf"<{tag}>\s*(.*?)\s*</{tag}>", text, re.DOTALL)
+        return m.group(1).strip() if m else ""
+
+    summary_html = _extract("summary_html")
+    content_html = _extract("content_html")
+    links_raw = _extract("links_json")
+
+    internal_links: list[dict] = []
+    if links_raw:
+        try:
+            internal_links = json.loads(links_raw)
+        except json.JSONDecodeError:
+            # Remove trailing commas and retry
+            links_raw = re.sub(r",\s*([}\]])", r"\1", links_raw)
+            try:
+                internal_links = json.loads(links_raw)
+            except json.JSONDecodeError:
+                logger.warning("Could not parse links_json, skipping internal links.")
+
+    return {
+        "summary_html": summary_html,
+        "content_html": content_html,
+        "internal_links_used": internal_links,
+    }
 
 
 def _first_n_words(html: str, n: int) -> str:
@@ -255,7 +270,7 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
             content_result = await campaign_client.call(sys_p, usr_p, max_tokens=8192)
             tokens.add(content_result)
 
-            content_data = _parse_json(content_result.text)
+            content_data = _parse_delimited(content_result.text)
             content_html: str = content_data.get("content_html", "")
             summary_html: str = content_data.get("summary_html", "")
             internal_links = content_data.get("internal_links_used", [])

@@ -118,21 +118,22 @@ def content_generator(
         f"Approved outline:\n{outline_json}\n\n"
         f"Existing page slugs for internal linking:\n{slugs_str}\n\n"
         "Required article structure (in this order):\n"
-        "1. summary_html — a 2-4 sentence direct answer, GEO-optimized, wrapped in <p> tag(s). "
-        "This is the opening summary shown above the article.\n"
-        "2. content_html — the full article body starting with a clear introduction, then:\n"
-        "   - H2/H3 sections following the outline\n"
-        "   - Tables where useful for comparison or synthesis\n"
-        "   - FAQ section answering all questions from the outline\n"
-        "   - Short conclusion\n\n"
+        "1. summary_html — a 2-4 sentence direct answer, GEO-optimized, wrapped in <p> tag(s).\n"
+        "2. content_html — full article body: intro → H2/H3 sections → tables where useful → FAQ → short conclusion.\n\n"
         "Content requirements:\n"
         "- Minimum 1200 words in content_html.\n"
         "- Main keyword appears naturally in the introduction and relevant sections.\n"
         "- Use relative hrefs like /slug for internal links.\n\n"
-        "Return JSON with exactly these keys:\n"
-        '{"summary_html": "<2-4 sentence summary as HTML>", '
-        '"content_html": "<full article HTML, without the summary>", '
-        '"internal_links_used": [{"text": "<anchor text>", "slug": "<slug>"}]}'
+        "Return your response using EXACTLY these delimiters (no JSON, no markdown fences):\n"
+        "<summary_html>\n"
+        "[2-4 sentence summary as HTML <p> tags]\n"
+        "</summary_html>\n"
+        "<content_html>\n"
+        "[full article HTML without the summary]\n"
+        "</content_html>\n"
+        "<links_json>\n"
+        '[{"text": "anchor text", "slug": "slug-value"}]\n'
+        "</links_json>"
     )
     return system, user
 
