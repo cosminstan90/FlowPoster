@@ -89,6 +89,8 @@ def content_generator(
         "- Write clear, concise, self-contained sentences that are easy to cite.\n"
         "- Define important terms simply and precisely.\n"
         "Produce valid HTML using semantic tags (h2, h3, p, ul, ol, strong, em, table). "
+        "IMPORTANT: use single quotes for ALL HTML attributes (e.g. href='/slug' not href=\"/slug\") "
+        "so the HTML embeds safely inside JSON string values. "
         "Do NOT wrap the response in markdown fences. "
         "Respond with a single JSON object."
     )

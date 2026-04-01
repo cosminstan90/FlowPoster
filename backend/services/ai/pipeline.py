@@ -52,14 +52,48 @@ class _TokenAccumulator:
         self.cost_usd += result.cost_usd
 
 
+def _repair_json(text: str) -> str:
+    """
+    Try to fix the most common LLM JSON issues:
+    1. HTML attribute double-quotes: attr="val" → attr='val'
+    2. Trailing commas before } or ]
+    3. Literal tab/newline characters inside string values
+    """
+    # Convert HTML attribute double-quotes to single-quotes
+    # Matches: word=  "content without raw < > or newline"
+    text = re.sub(r'(\w+)="([^"<>\n\r]*)"', r"\1='\2'", text)
+    # Remove trailing commas before closing braces/brackets
+    text = re.sub(r",\s*([}\]])", r"\1", text)
+    # Replace literal (unescaped) tab characters inside strings
+    text = text.replace("\t", "\\t")
+    return text
+
+
 def _parse_json(text: str) -> dict:
-    """Extract and parse JSON from LLM output that may contain markdown fences."""
+    """
+    Extract and parse JSON from LLM output.
+    Falls back to a repair pass before raising.
+    """
     cleaned = text.strip()
-    # strip markdown code fences
+    # Strip markdown code fences
     m = re.search(r"```(?:json)?\s*\n?(.*?)```", cleaned, re.DOTALL)
     if m:
         cleaned = m.group(1).strip()
-    return json.loads(cleaned)
+
+    # First attempt — standard parse
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    # Second attempt — after basic repairs
+    try:
+        return json.loads(_repair_json(cleaned))
+    except json.JSONDecodeError as exc:
+        # Log a snippet to help debug future issues
+        snippet = cleaned[:200].replace("\n", " ")
+        logger.warning("JSON repair failed. Snippet: %s", snippet)
+        raise
 
 
 def _first_n_words(html: str, n: int) -> str:
