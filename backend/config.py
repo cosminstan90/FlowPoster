@@ -4,7 +4,8 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     DATABASE_URL: str
     SECRET_KEY: str
-    ANTHROPIC_API_KEY: str
+    ANTHROPIC_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
     REDIS_URL: str = "redis://localhost:6379"
     ADMIN_USERNAME: str = "admin"
     ADMIN_PASSWORD: str

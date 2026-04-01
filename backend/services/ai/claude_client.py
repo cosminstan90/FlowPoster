@@ -24,8 +24,10 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------
 _PRICING: dict[str, tuple[Decimal, Decimal]] = {
     # model_id → (input_price_per_token, output_price_per_token)
-    "claude-sonnet-4-20250514": (Decimal("0.000003"), Decimal("0.000015")),
-    "claude-haiku-4-5-20251001": (Decimal("0.0000008"), Decimal("0.000004")),
+    "claude-opus-4-6":          (Decimal("0.000015"),  Decimal("0.000075")),
+    "claude-sonnet-4-6":        (Decimal("0.000003"),  Decimal("0.000015")),
+    "claude-sonnet-4-20250514": (Decimal("0.000003"),  Decimal("0.000015")),
+    "claude-haiku-4-5-20251001":(Decimal("0.0000008"), Decimal("0.000004")),
 }
 
 _DEFAULT_INPUT = Decimal("0.000003")

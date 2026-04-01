@@ -124,7 +124,7 @@ def content_generator(
         "   - FAQ section answering all questions from the outline\n"
         "   - Short conclusion\n\n"
         "Content requirements:\n"
-        "- Minimum 800 words in content_html.\n"
+        "- Minimum 1200 words in content_html.\n"
         "- Main keyword appears naturally in the introduction and relevant sections.\n"
         "- Use relative hrefs like /slug for internal links.\n\n"
         "Return JSON with exactly these keys:\n"

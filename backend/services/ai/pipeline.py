@@ -17,7 +17,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.models import Campaign, GeneratedPage, Keyword, SiteContext
-from backend.services.ai.claude_client import CallResult, ClaudeClient
+from backend.services.ai.claude_client import CallResult
+from backend.services.ai.client_factory import get_ai_client, get_fast_client
 from backend.services.ai import prompts
 from backend.services.ai.quality_scorer import score as quality_score
 from backend.services.budget_checker import check_and_update_budget_alert
@@ -25,7 +26,6 @@ from backend.services.duplicate_guard import DuplicateGuard
 
 logger = logging.getLogger(__name__)
 
-HAIKU = "claude-haiku-4-5-20251001"
 
 # GEO version constant (imported lazily but defined here to avoid NameError)
 try:
@@ -108,9 +108,9 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
     kw.updated_at = datetime.now(timezone.utc)
     await db.flush()
 
-    campaign_model = campaign.model or "claude-sonnet-4-20250514"
-    haiku_client = ClaudeClient(HAIKU)
-    campaign_client = ClaudeClient(campaign_model)
+    campaign_model = campaign.model or "claude-sonnet-4-6"
+    fast_client = get_fast_client(campaign_model)
+    campaign_client = get_ai_client(campaign_model)
     tokens = _TokenAccumulator()
 
     language = campaign.language or "ro"
@@ -120,7 +120,7 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
         # Step 1 — Intent Detector  (haiku)
         # =============================================================
         sys_p, usr_p = prompts.intent_detector(kw.keyword, site_ctx.niche)
-        intent_result = await haiku_client.call(sys_p, usr_p, max_tokens=256)
+        intent_result = await fast_client.call(sys_p, usr_p, max_tokens=256)
         tokens.add(intent_result)
 
         intent_data = _parse_json(intent_result.text)
@@ -230,7 +230,7 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
         # Step 5 — SEO Layer  (haiku)
         # =============================================================
         sys_p, usr_p = prompts.seo_layer(content_html, kw.keyword, language)
-        seo_result = await haiku_client.call(sys_p, usr_p, max_tokens=512)
+        seo_result = await fast_client.call(sys_p, usr_p, max_tokens=512)
         tokens.add(seo_result)
 
         seo_data = _parse_json(seo_result.text)
@@ -248,7 +248,7 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
             faq_questions=faq_questions,
             faq_html=content_html,
         )
-        schema_result = await haiku_client.call(sys_p, usr_p, max_tokens=2048)
+        schema_result = await fast_client.call(sys_p, usr_p, max_tokens=2048)
         tokens.add(schema_result)
 
         schema_markup: dict | None = None
@@ -279,7 +279,7 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
         # =============================================================
         content_start = _first_n_words(content_html, 300)
         sys_p, usr_p = prompts.intent_validator(kw.keyword, search_intent, content_start)
-        validator_result = await haiku_client.call(sys_p, usr_p, max_tokens=512)
+        validator_result = await fast_client.call(sys_p, usr_p, max_tokens=512)
         tokens.add(validator_result)
 
         validator_data = _parse_json(validator_result.text)

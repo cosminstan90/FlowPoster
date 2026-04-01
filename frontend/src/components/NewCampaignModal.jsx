@@ -2,9 +2,23 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import Modal from "./Modal";
 
-const MODELS = [
-  { value: "claude-sonnet-4-20250514", label: "Claude Sonnet 4 (recomandat)" },
-  { value: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5 (rapid, ieftin)" },
+const MODEL_GROUPS = [
+  {
+    label: "Anthropic Claude",
+    models: [
+      { value: "claude-sonnet-4-6",        label: "Claude Sonnet 4.6 — recomandat" },
+      { value: "claude-opus-4-6",           label: "Claude Opus 4.6 — calitate maximă" },
+      { value: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5 — rapid / ieftin" },
+    ],
+  },
+  {
+    label: "OpenAI",
+    models: [
+      { value: "gpt-4o",      label: "GPT-4o" },
+      { value: "gpt-4o-mini", label: "GPT-4o mini — ieftin" },
+      { value: "o3-mini",     label: "o3-mini" },
+    ],
+  },
 ];
 
 const LANGUAGES = [
@@ -20,7 +34,7 @@ export default function NewCampaignModal({ open, onClose, onSave }) {
     name: "",
     description: "",
     language: "ro",
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     pages_per_day: 5,
     time_of_day: "08:00",
   });
@@ -42,7 +56,7 @@ export default function NewCampaignModal({ open, onClose, onSave }) {
             ? { pages_per_day: Number(form.pages_per_day), time_of_day: form.time_of_day }
             : null,
       });
-      setForm({ name: "", description: "", language: "ro", model: "claude-sonnet-4-20250514", pages_per_day: 5, time_of_day: "08:00" });
+      setForm({ name: "", description: "", language: "ro", model: "claude-sonnet-4-6", pages_per_day: 5, time_of_day: "08:00" });
       onClose();
     } finally {
       setLoading(false);
@@ -93,7 +107,13 @@ export default function NewCampaignModal({ open, onClose, onSave }) {
           <div>
             <label className={LABEL}>Model AI</label>
             <select value={form.model} onChange={set("model")} className={FIELD}>
-              {MODELS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+              {MODEL_GROUPS.map((g) => (
+                <optgroup key={g.label} label={g.label}>
+                  {g.models.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
           </div>
         </div>

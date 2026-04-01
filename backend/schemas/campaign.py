@@ -14,7 +14,7 @@ class CampaignCreate(BaseModel):
     project_id: UUID
     name: str
     description: str | None = None
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "claude-sonnet-4-6"
     language: str = "ro"
     status: Literal["active", "paused", "completed"] = "active"
     publish_schedule: PublishSchedule | None = None
