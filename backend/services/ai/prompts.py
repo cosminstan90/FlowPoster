@@ -39,8 +39,7 @@ def outline_generator(
 ) -> tuple[str, str]:
     system = (
         "You are an expert SEO content strategist. "
-        f"Write all outlines in {language}. "
-        "Respond with a single JSON object, no markdown fences."
+        f"Write all outlines in {language}."
     )
     user = (
         f"Create a content outline for the keyword '{keyword}'.\n\n"
@@ -48,9 +47,13 @@ def outline_generator(
         f"Niche: {niche}\n"
         f"Target audience: {target_audience}\n"
         f"Tone: {tone}\n\n"
-        "Return JSON with exactly these fields:\n"
-        '{"h2_sections": [{"title": "<string>", "description": "<brief guidance>"}], '
-        '"faq_questions": ["<question 1>", "<question 2>", "<question 3>", "<question 4>", "<question 5>"]}'
+        "Return your response using EXACTLY these delimiters:\n\n"
+        "<h2_titles>\n"
+        "[one H2 section title per line, 4-7 titles]\n"
+        "</h2_titles>\n"
+        "<faq_questions>\n"
+        "[one FAQ question per line, exactly 5 questions]\n"
+        "</faq_questions>"
     )
     return system, user
 

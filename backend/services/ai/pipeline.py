@@ -76,6 +76,26 @@ def _parse_json(text: str) -> dict:
             raise
 
 
+def _parse_outline(text: str) -> dict:
+    """
+    Parse outline_generator delimited output:
+        <h2_titles>one per line</h2_titles>
+        <faq_questions>one per line</faq_questions>
+    """
+    def _lines(tag: str) -> list[str]:
+        m = re.search(rf"<{tag}>\s*(.*?)\s*</{tag}>", text, re.DOTALL)
+        if not m:
+            return []
+        return [l.strip() for l in m.group(1).splitlines() if l.strip()]
+
+    titles = _lines("h2_titles")
+    faqs   = _lines("faq_questions")
+    return {
+        "h2_sections":   [{"title": t} for t in titles],
+        "faq_questions": faqs,
+    }
+
+
 def _parse_delimited(text: str) -> dict:
     """
     Parse the content_generator delimited format:
@@ -203,7 +223,7 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
         outline_result = await campaign_client.call(sys_p, usr_p, max_tokens=2048)
         tokens.add(outline_result)
 
-        outline_data = _parse_json(outline_result.text)
+        outline_data = _parse_outline(outline_result.text)
         faq_questions: list[str] = outline_data.get("faq_questions", [])
         secondary_keywords: list[str] = [
             s["title"] for s in outline_data.get("h2_sections", []) if s.get("title")
