@@ -32,6 +32,7 @@ class PageDetailOut(BaseModel):
     title: str | None
     slug: str | None
     meta_description: str | None
+    summary_html: str | None = None
     content_html: str | None
     schema_markup: dict | None
     faq_items: list

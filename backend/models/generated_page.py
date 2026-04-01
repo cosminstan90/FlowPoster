@@ -20,6 +20,7 @@ class GeneratedPage(Base):
     title: Mapped[str | None] = mapped_column(String(500), nullable=True)
     slug: Mapped[str | None] = mapped_column(String(500), nullable=True)
     meta_description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    summary_html: Mapped[str | None] = mapped_column(Text, nullable=True)
     content_html: Mapped[str | None] = mapped_column(Text, nullable=True)
     schema_markup: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     faq_items: Mapped[list] = mapped_column(JSON, nullable=False, default=list)

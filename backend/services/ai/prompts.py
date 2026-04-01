@@ -70,14 +70,29 @@ def content_generator(
     author_credentials: str | None,
     existing_slugs: list[str],
     language: str,
+    secondary_keywords: list[str] | None = None,
 ) -> tuple[str, str]:
     system = (
-        "You are a senior SEO copywriter. "
-        f"Write all content in {language}. "
-        "Produce valid HTML with semantic tags (h2, h3, p, ul, ol, strong, em). "
+        f"You are a senior SEO and GEO content writer. Write all content in {language}.\n"
+        "Editorial rules (mandatory):\n"
+        "- Never invent data, statistics, or facts. If uncertain, phrase it cautiously.\n"
+        "- Write in short, digestible sentences and short paragraphs.\n"
+        "- Avoid filler, repetition, and vague language.\n"
+        "- Tone: friendly but expert. Style: clear, direct, factual (Axios-style).\n"
+        "- Make content easy to scan and easy to extract by AI systems.\n"
+        "SEO rules:\n"
+        "- Include the main keyword naturally in the intro and relevant sections.\n"
+        "- Cover the search intent completely. Use semantic variations.\n"
+        "- No keyword stuffing.\n"
+        "GEO rules:\n"
+        "- Open with a direct answer (the summary).\n"
+        "- Write clear, concise, self-contained sentences that are easy to cite.\n"
+        "- Define important terms simply and precisely.\n"
+        "Produce valid HTML using semantic tags (h2, h3, p, ul, ol, strong, em, table). "
         "Do NOT wrap the response in markdown fences. "
         "Respond with a single JSON object."
     )
+
     avoid = f"\nTopics to avoid: {topics_to_avoid}" if topics_to_avoid else ""
     author_ctx = ""
     if author_name:
@@ -87,21 +102,34 @@ def content_generator(
         if author_bio:
             author_ctx += f"\nAuthor bio: {author_bio}"
 
+    sec_kw_str = ", ".join(secondary_keywords) if secondary_keywords else ""
+    sec_kw_line = f"\nSecondary keywords: {sec_kw_str}" if sec_kw_str else ""
     slugs_str = ", ".join(existing_slugs[:50]) if existing_slugs else "(none yet)"
+
     user = (
-        f"Write a comprehensive article for the keyword '{keyword}'.\n\n"
-        f"Outline:\n{outline_json}\n\n"
+        f"Write a complete article for the main keyword: '{keyword}'.\n"
         f"Niche: {niche}\n"
         f"Target audience: {target_audience}\n"
         f"Tone: {tone}\n"
+        f"Goal: organic traffic{sec_kw_line}"
         f"{avoid}{author_ctx}\n\n"
-        f"Existing page slugs available for internal linking:\n{slugs_str}\n\n"
-        "Requirements:\n"
-        "- Minimum 600 words.\n"
-        "- Include FAQ section answering the 5 questions from the outline.\n"
-        "- Use the provided page slugs for internal links where relevant (use relative hrefs like /slug).\n\n"
-        "Return JSON:\n"
-        '{"content_html": "<full HTML article>", '
+        f"Approved outline:\n{outline_json}\n\n"
+        f"Existing page slugs for internal linking:\n{slugs_str}\n\n"
+        "Required article structure (in this order):\n"
+        "1. summary_html — a 2-4 sentence direct answer, GEO-optimized, wrapped in <p> tag(s). "
+        "This is the opening summary shown above the article.\n"
+        "2. content_html — the full article body starting with a clear introduction, then:\n"
+        "   - H2/H3 sections following the outline\n"
+        "   - Tables where useful for comparison or synthesis\n"
+        "   - FAQ section answering all questions from the outline\n"
+        "   - Short conclusion\n\n"
+        "Content requirements:\n"
+        "- Minimum 800 words in content_html.\n"
+        "- Main keyword appears naturally in the introduction and relevant sections.\n"
+        "- Use relative hrefs like /slug for internal links.\n\n"
+        "Return JSON with exactly these keys:\n"
+        '{"summary_html": "<2-4 sentence summary as HTML>", '
+        '"content_html": "<full article HTML, without the summary>", '
         '"internal_links_used": [{"text": "<anchor text>", "slug": "<slug>"}]}'
     )
     return system, user

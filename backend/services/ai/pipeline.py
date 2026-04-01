@@ -156,6 +156,9 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
 
         outline_data = _parse_json(outline_result.text)
         faq_questions: list[str] = outline_data.get("faq_questions", [])
+        secondary_keywords: list[str] = [
+            s["title"] for s in outline_data.get("h2_sections", []) if s.get("title")
+        ]
 
         # =============================================================
         # Step 4 — Content Generator  (campaign model OR GEO generator)
@@ -195,6 +198,7 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
             )
             tokens.add(geo_result.call_result)
             content_html: str = geo_result.content_html
+            summary_html: str = geo_result.direct_answer or ""
             internal_links = []  # will be extracted from GEO result if needed
             geo_direct_answer = geo_result.direct_answer
             geo_speakable_sections = geo_result.speakable_sections
@@ -212,12 +216,14 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
                 author_credentials=site_ctx.author_credentials,
                 existing_slugs=existing_slugs,
                 language=language,
+                secondary_keywords=secondary_keywords,
             )
             content_result = await campaign_client.call(sys_p, usr_p, max_tokens=8192)
             tokens.add(content_result)
 
             content_data = _parse_json(content_result.text)
             content_html: str = content_data.get("content_html", "")
+            summary_html: str = content_data.get("summary_html", "")
             internal_links = content_data.get("internal_links_used", [])
 
         # =============================================================
@@ -322,6 +328,7 @@ async def run_pipeline(keyword_id: uuid.UUID, db: AsyncSession) -> GeneratedPage
             title=title,
             slug=slug,
             meta_description=meta_description,
+            summary_html=summary_html or None,
             content_html=content_html,
             schema_markup=schema_markup,
             faq_items=faq_items,
