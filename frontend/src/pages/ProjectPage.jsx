@@ -5,6 +5,7 @@ import { getProject } from "../api/projects";
 import { getCampaigns, getCampaign, createCampaign } from "../api/campaigns";
 import CampaignCard from "../components/CampaignCard";
 import NewCampaignModal from "../components/NewCampaignModal";
+import SiteContextForm from "../components/SiteContextForm";
 
 const TAB_CLS = (active) =>
   `px-4 py-2 text-sm font-medium border-b-2 transition ${
@@ -141,26 +142,7 @@ export default function ProjectPage() {
       {/* Setări Site tab */}
       {tab === "settings" && (
         <div className="rounded-xl border border-border bg-bg-card p-6">
-          <h2 className="mb-4 text-base font-semibold text-white">Setări Site Context</h2>
-          {project.site_context ? (
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              {[
-                ["Nișă", project.site_context.niche],
-                ["Audiență", project.site_context.target_audience],
-                ["Ton", project.site_context.tone],
-                ["Autor", project.site_context.author_name || "—"],
-                ["Credențiale", project.site_context.author_credentials || "—"],
-                ["An fondare", project.site_context.site_founded_year || "—"],
-              ].map(([k, v]) => (
-                <div key={k}>
-                  <p className="text-xs text-muted">{k}</p>
-                  <p className="text-white">{v}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted text-sm">Site context neconfigurat.</p>
-          )}
+          <SiteContextForm projectId={id} domain={project.domain} />
         </div>
       )}
 

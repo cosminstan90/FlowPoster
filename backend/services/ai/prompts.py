@@ -205,6 +205,34 @@ def intent_validator(
 
 
 # ------------------------------------------------------------------
+# Site Analyzer  (fast model)
+# ------------------------------------------------------------------
+def site_analyzer(
+    domain: str,
+    homepage_text: str,
+    sitemap_sample: list[str],
+) -> tuple[str, str]:
+    system = (
+        "You are an SEO and content strategy expert. "
+        "Analyze the website content provided and return a JSON site context object. "
+        "Respond with a single JSON object, no markdown fences."
+    )
+    sitemap_str = "\n".join(sitemap_sample[:30]) if sitemap_sample else "(not available)"
+    user = (
+        f"Analyze this website and suggest a content strategy context.\n\n"
+        f"Domain: {domain}\n\n"
+        f"Homepage text (first 3000 chars):\n{homepage_text[:3000]}\n\n"
+        f"Sample URLs from sitemap:\n{sitemap_str}\n\n"
+        "Return JSON with exactly these fields:\n"
+        '{"niche": "<2-5 word niche description, in the language of the site>", '
+        '"target_audience": "<description of ideal reader, in the language of the site>", '
+        '"tone": "<one of: professional, friendly, expert, educational, conversational, casual>", '
+        '"topics_to_avoid": "<topics that seem off-brand or irrelevant, or null if none>"}'
+    )
+    return system, user
+
+
+# ------------------------------------------------------------------
 # Regeneration – Intro  (campaign model)
 # ------------------------------------------------------------------
 def intro_regenerator(
